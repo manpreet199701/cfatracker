@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CFA Tracker — Subjects</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.subjects-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.subject-card-full {
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.subject-card-full:hover { transform: translateY(-3px); }
+
+.subject-card-full .top-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+}
+
+.subject-card-full .card-body { padding-top: 0.5rem; }
+.subject-card-full .big-icon { font-size: 2.5rem; margin-bottom: 0.25rem; }
+.subject-card-full .sub-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+.subject-card-full .sub-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+.subject-card-full .sub-pct { font-family: var(--mono); font-weight: 600; font-size: 1rem; }
+.subject-card-full .topic-count { font-size: 0.78rem; color: var(--text-muted); }
+
+.overall-bar {
+  max-width: 600px;
+}
+
+.summary-strip {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
+.summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">CFA <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="fade-up">
+    <p class="label">CFA Level I</p>
+    <h1 style="margin-top:0.25rem;margin-bottom:1.5rem">All Subjects</h1>
+  </div>
+
+  <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
+
+  <div id="subjectsGrid" class="subjects-page-grid"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+async function init() {
+  const data = await loadData();
+  const completed = getCompleted();
+  const subjects = data.subjects;
+
+  const totalTopics = subjects.reduce((s, sub) => s + sub.topics.length, 0);
+  const doneTopics = subjects.reduce((s, sub) => s + sub.topics.filter(t => completed[`s${sub.id}_t${t.id}`]).length, 0);
+  const overallPct = totalTopics ? Math.round(doneTopics / totalTopics * 100) : 0;
+
+  // Summary strip
+  document.getElementById('summaryStrip').innerHTML = `
+    <div class="summary-stat">
+      <div class="val" style="color:var(--accent)">${doneTopics}</div>
+      <div class="lbl">Topics Completed</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:var(--text-muted)">${totalTopics - doneTopics}</div>
+      <div class="lbl">Topics Remaining</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:var(--success)">${overallPct}%</div>
+      <div class="lbl">Overall Progress</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val">${subjects.length}</div>
+      <div class="lbl">Subjects</div>
+    </div>
+  `;
+
+  // Subject cards
+  const grid = document.getElementById('subjectsGrid');
+  grid.innerHTML = subjects.map((s, i) => {
+    const done = s.topics.filter(t => completed[`s${s.id}_t${t.id}`]).length;
+    const pct = s.topics.length ? Math.round(done / s.topics.length * 100) : 0;
+    const delay = Math.min(i * 0.05, 0.5);
+    return `<a href="subject.html?id=${s.id}" class="card subject-card-full fade-up" style="animation-delay:${delay + 0.2}s">
+      <div class="top-bar" style="background:${s.color}"></div>
+      <div class="card-body">
+        <div class="big-icon">${s.icon}</div>
+        <div class="sub-name">${s.name}</div>
+        <div class="sub-meta">
+          <span class="topic-count">${done}/${s.topics.length} topics</span>
+          <span class="sub-pct" style="color:${s.color}">${pct}%</span>
+        </div>
+        <div class="progress-track" style="margin-top:0.6rem">
+          <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>

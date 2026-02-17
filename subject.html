@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CFA Tracker — Subject</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.subject-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.subject-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.subject-header .big-icon { font-size: 3.5rem; flex-shrink: 0; }
+.subject-header .header-info { flex: 1; }
+.subject-header .header-pct { font-family: var(--mono); font-size: 2rem; font-weight: 700; }
+
+.topics-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.topic-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.topic-row:hover { background: var(--surface2); border-color: #444C56; }
+.topic-row.completed { opacity: 0.55; }
+.topic-row.completed .topic-name { text-decoration: line-through; color: var(--text-muted); }
+
+.topic-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-size: 12px;
+  cursor: pointer;
+}
+.topic-check.done { border-color: var(--success); background: var(--success); color: #fff; }
+
+.topic-name { flex: 1; font-weight: 500; font-size: 0.95rem; }
+
+.topic-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.topic-link-btn:hover { background: rgba(88,166,255,0.1); border-color: var(--accent); }
+
+.toggle-all { font-size: 0.8rem; color: var(--accent); cursor: pointer; background: none; border: none; font-family: var(--font); font-weight: 600; }
+.toggle-all:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">CFA <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="breadcrumb fade-up">
+    <a href="index.html">Home</a>
+    <span>›</span>
+    <a href="subjects.html">Subjects</a>
+    <span>›</span>
+    <span id="breadSubject">Subject</span>
+  </div>
+
+  <div id="subjectHeader" class="subject-header fade-up delay-1"></div>
+
+  <div class="section-header fade-up delay-2">
+    <div>
+      <p class="label">Topics</p>
+      <h2 style="margin-top:0.2rem">Click a topic to open its notes & questions</h2>
+    </div>
+    <button class="toggle-all" id="toggleAllBtn">Mark all complete</button>
+  </div>
+
+  <div id="topicsList" class="topics-list" style="margin-top:1rem"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+const params = new URLSearchParams(window.location.search);
+const subjectId = parseInt(params.get('id'));
+
+async function init() {
+  const data = await loadData();
+  const subject = data.subjects.find(s => s.id === subjectId);
+  if (!subject) {
+    document.body.innerHTML = '<div class="page"><h2>Subject not found.</h2><a href="subjects.html">← Back</a></div>';
+    return;
+  }
+
+  document.title = `CFA Tracker — ${subject.shortName}`;
+  document.getElementById('breadSubject').textContent = subject.shortName;
+
+  render(subject);
+
+  document.getElementById('toggleAllBtn').addEventListener('click', () => {
+    const completed = getCompleted();
+    const allDone = subject.topics.every(t => completed[`s${subject.id}_t${t.id}`]);
+    subject.topics.forEach(t => {
+      completed[`s${subject.id}_t${t.id}`] = !allDone;
+    });
+    saveCompleted(completed);
+    render(subject);
+  });
+}
+
+function render(subject) {
+  const completed = getCompleted();
+  const done = subject.topics.filter(t => completed[`s${subject.id}_t${t.id}`]).length;
+  const pct = subject.topics.length ? Math.round(done / subject.topics.length * 100) : 0;
+
+  // Header
+  document.getElementById('subjectHeader').innerHTML = `
+    <style>#subjectHeader::before { background: ${subject.color}; }</style>
+    <div class="big-icon">${subject.icon}</div>
+    <div class="header-info">
+      <p class="label">Subject ${subject.id} of 10</p>
+      <h1 style="margin-top:0.2rem;margin-bottom:0.5rem">${subject.name}</h1>
+      <div style="display:flex;align-items:center;gap:1.5rem">
+        <div>
+          <div class="header-pct" style="color:${subject.color}">${pct}%</div>
+          <div class="stat-sub">${done} of ${subject.topics.length} topics completed</div>
+        </div>
+      </div>
+      <div class="progress-track" style="margin-top:0.8rem;max-width:400px">
+        <div class="progress-fill" style="width:${pct}%;background:${subject.color}"></div>
+      </div>
+    </div>
+  `;
+
+  // Toggle all label
+  const allDone = subject.topics.every(t => completed[`s${subject.id}_t${t.id}`]);
+  document.getElementById('toggleAllBtn').textContent = allDone ? 'Unmark all' : 'Mark all complete';
+
+  // Topics list
+  const list = document.getElementById('topicsList');
+  list.innerHTML = subject.topics.map((t, i) => {
+    const isDone = !!completed[`s${subject.id}_t${t.id}`];
+    return `<div class="topic-row ${isDone ? 'completed' : ''} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-sid="${subject.id}" data-tid="${t.id}">
+      <div class="topic-check ${isDone ? 'done' : ''}" data-check="${subject.id}_${t.id}">
+        ${isDone ? '✓' : ''}
+      </div>
+      <span class="topic-name">${i + 1}. ${t.name}</span>
+      <a href="topic.html?subject=${subject.id}&topic=${t.id}" class="topic-link-btn">📖 Open →</a>
+    </div>`;
+  }).join('');
+
+  // Click to toggle completion
+  list.querySelectorAll('.topic-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      // Don't toggle when clicking the link
+      if (e.target.closest('.topic-link-btn')) return;
+      const sid = parseInt(row.dataset.sid);
+      const tid = parseInt(row.dataset.tid);
+      toggleCompleted(sid, tid);
+      render(subject);
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>

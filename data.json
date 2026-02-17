@@ -1,0 +1,534 @@
+{
+  "subjects": [
+    {
+      "id": 1,
+      "name": "Ethical and Professional Standards",
+      "shortName": "Ethics",
+      "color": "#E63946",
+      "icon": "⚖️",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Ethics and Trust in the Investment Profession",
+          "notes": "Paste your notes here for this topic. You can use plain text or structure with line breaks.",
+          "questions": [
+            { "q": "Why is ethics important in the investment profession?", "a": "Paste your answer here." }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Code of Ethics and Standards of Professional Conduct",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Guidance for Standards I–III",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Guidance for Standards IV–VII",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Introduction to GIPS",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Quantitative Methods",
+      "shortName": "Quant",
+      "color": "#2196F3",
+      "icon": "📐",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Time Value of Money",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Organizing, Visualizing, and Describing Data",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Probability Concepts",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Common Probability Distributions",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Sampling and Estimation",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Hypothesis Testing",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Introduction to Linear Regression",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Economics",
+      "shortName": "Economics",
+      "color": "#4CAF50",
+      "icon": "📈",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Topics in Demand and Supply Analysis",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "The Firm and Market Structures",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Aggregate Output, Prices, and Economic Growth",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Understanding Business Cycles",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Monetary and Fiscal Policy",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "International Trade and Capital Flows",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Currency Exchange Rates",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Financial Statement Analysis",
+      "shortName": "FSA",
+      "color": "#FF9800",
+      "icon": "📊",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Introduction to Financial Statement Analysis",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Financial Reporting Standards",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Understanding Income Statements",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Understanding Balance Sheets",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Understanding Cash Flow Statements",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Financial Analysis Techniques",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Inventories",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 8,
+          "name": "Long-Lived Assets",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 9,
+          "name": "Income Taxes",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 10,
+          "name": "Long-Term Liabilities and Leases",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 11,
+          "name": "Financial Reporting Quality",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Corporate Issuers",
+      "shortName": "Corporate",
+      "color": "#9C27B0",
+      "icon": "🏢",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Corporate Governance and ESG Considerations",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Capital Budgeting",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Cost of Capital: Foundational Topics",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Capital Structure",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Measures of Leverage",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Working Capital and Liquidity",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Equity Investments",
+      "shortName": "Equity",
+      "color": "#00BCD4",
+      "icon": "📉",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Market Organization and Structure",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Security Market Indexes",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Market Efficiency",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Overview of Equity Securities",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Introduction to Industry and Company Analysis",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Equity Valuation: Concepts and Basic Tools",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Fixed Income",
+      "shortName": "Fixed Income",
+      "color": "#3F51B5",
+      "icon": "💵",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Fixed-Income Instrument Features",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Fixed-Income Markets: Issuance, Trading, and Funding",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Introduction to Fixed-Income Valuation",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Introduction to Asset-Backed Securities",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Understanding Fixed-Income Risk and Return",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Fundamentals of Credit Analysis",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Derivatives",
+      "shortName": "Derivatives",
+      "color": "#FF5722",
+      "icon": "🔁",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Derivative Instrument and Market Features",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Forward Commitments and Contingent Claims",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Derivative Benefits, Risks, and Uses",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Arbitrage, Replication, and Cost of Carry",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Pricing and Valuation of Forward Contracts",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Pricing and Valuation of Futures Contracts",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Pricing and Valuation of Interest Rate Swaps",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 8,
+          "name": "Pricing and Valuation of Options",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 9,
+          "name": "Option Replication Using Put-Call Parity",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 10,
+          "name": "Valuing with One-Period Binomial Model",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Alternative Investments",
+      "shortName": "Alternatives",
+      "color": "#009688",
+      "icon": "🏛️",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Alternative Investment Features, Methods, and Structures",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Alternative Investment Performance and Returns",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Investments in Private Capital: Equity and Debt",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Real Estate and Infrastructure",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "Natural Resources",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Hedge Funds",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Introduction to Digital Assets",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Portfolio Management",
+      "shortName": "Portfolio",
+      "color": "#FFC107",
+      "icon": "💼",
+      "topics": [
+        {
+          "id": 1,
+          "name": "Portfolio Management: An Overview",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 2,
+          "name": "Portfolio Risk and Return: Part I",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 3,
+          "name": "Portfolio Risk and Return: Part II",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 4,
+          "name": "Basics of Portfolio Planning and Construction",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 5,
+          "name": "The Behavioral Biases of Individuals",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 6,
+          "name": "Introduction to Risk Management",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 7,
+          "name": "Technical Analysis",
+          "notes": "",
+          "questions": []
+        },
+        {
+          "id": 8,
+          "name": "Fintech in Investment Management",
+          "notes": "",
+          "questions": []
+        }
+      ]
+    }
+  ]
+}
