@@ -50,6 +50,14 @@
 .subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
 
 .log-controls { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 0.75rem; }
+.cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--border); font-size: 0.75rem; position: relative; background: var(--surface); }
+.cal-day.today { border-color: var(--accent); border-width: 2px; }
+.cal-day.has-hours { background: var(--success); color: white; font-weight: 600; }
+.cal-day.other-month { opacity: 0.3; }
+.cal-hours { font-size: 0.65rem; margin-top: 2px; }
+.cal-header { font-weight: 600; font-size: 0.7rem; color: var(--text-muted); padding: 0.5rem 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -76,7 +84,10 @@
           <p class="label">Today's Session</p>
           <h2 id="todayDate" style="margin-top:0.25rem">—</h2>
         </div>
-        <div id="streakBadge" class="streak-flame" title="Study streak"></div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <div id="streakBadge" class="streak-flame" title="Study streak"></div>
+          <button id="clearTodayBtn" class="btn btn-danger" style="padding:0.3rem 0.7rem;font-size:0.8rem">Clear Today</button>
+        </div>
       </div>
 
       <div class="hours-row">
@@ -166,13 +177,17 @@
       <div id="subjectsMini" class="subjects-grid"></div>
     </div>
 
-    <!-- RECENT LOG -->
+    <!-- CALENDAR -->
     <div class="card fade-up delay-4">
       <div class="section-header">
-        <p class="label">Recent Study Log</p>
-        <button id="clearTodayBtn" class="btn btn-danger" style="padding:0.3rem 0.7rem;font-size:0.8rem">Clear Today</button>
+        <p class="label">Study Calendar</p>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <button id="prevMonth" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.8rem">←</button>
+          <span id="calendarMonth" style="font-size:0.85rem;font-weight:600;min-width:120px;text-align:center"></span>
+          <button id="nextMonth" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.8rem">→</button>
+        </div>
       </div>
-      <div id="logList"></div>
+      <div id="calendar"></div>
     </div>
 
   </div>
@@ -183,6 +198,8 @@
 setActiveNav();
 
 let DATA = { subjects: [] };
+let currentCalendarMonth = new Date();
+currentCalendarMonth.setDate(1); // Start at Feb 1, 2025
 
 async function init() {
   DATA = await loadData();
@@ -266,8 +283,8 @@ function renderAll() {
   // Subjects mini
   renderSubjectsMini(completed, DATA.subjects);
 
-  // Log
-  renderLog(log);
+  // Calendar
+  renderCalendar(log);
 }
 
 function renderSubjectsMini(completed, subjects) {
@@ -301,6 +318,55 @@ function renderLog(log) {
     </div>`).join('');
 }
 
+function renderCalendar(log) {
+  const year = currentCalendarMonth.getFullYear();
+  const month = currentCalendarMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const todayStr = today();
+  
+  document.getElementById('calendarMonth').textContent = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  let html = '<div class="calendar">';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+    html += `<div class="cal-header">${d}</div>`;
+  });
+  
+  // Previous month days
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month">${prevMonthDays - i}</div>`;
+  }
+  
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const entry = log.find(l => l.date === dateStr);
+    const hours = entry ? entry.hours : 0;
+    const isToday = dateStr === todayStr;
+    const classes = ['cal-day'];
+    if (isToday) classes.push('today');
+    if (hours > 0) classes.push('has-hours');
+    
+    html += `<div class="${classes.join(' ')}">
+      <div>${day}</div>
+      ${hours > 0 ? `<div class="cal-hours">${hours}h</div>` : ''}
+    </div>`;
+  }
+  
+  // Next month days
+  const totalCells = startDay + daysInMonth;
+  const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i = 1; i <= remainingCells; i++) {
+    html += `<div class="cal-day other-month">${i}</div>`;
+  }
+  
+  html += '</div>';
+  document.getElementById('calendar').innerHTML = html;
+}
+
 // Event listeners
 document.getElementById('logBtn').addEventListener('click', () => {
   const h = parseFloat(document.getElementById('hoursInput').value);
@@ -321,6 +387,16 @@ document.getElementById('clearTodayBtn').addEventListener('click', () => {
   saveStudyLog(log);
   document.getElementById('hoursInput').value = '';
   renderAll();
+});
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() - 1);
+  renderCalendar(getStudyLog());
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + 1);
+  renderCalendar(getStudyLog());
 });
 
 init();
