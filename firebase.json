@@ -1,6 +1,6 @@
 {
     "hosting": {
-      "public": "studytimetabletracker",
+      "public": ".",
       "ignore": [
         "firebase.json",
         "**/.*",
