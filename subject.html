@@ -50,7 +50,7 @@
   margin-left: 2rem;
   border-left: 2px solid var(--border);
 }
-.topic-row:hover:not(.chapter) { background: var(--surface2); border-color: #444C56; }
+.topic-row:hover { background: var(--surface2); border-color: #444C56; }
 .topic-row.completed { opacity: 0.55; }
 .topic-row.completed .topic-name { text-decoration: line-through; color: var(--text-muted); }
 
@@ -83,28 +83,7 @@
 }
 .topic-check.done { border-color: var(--success); background: var(--success); color: #fff; }
 
-.topic-name { flex: 1; font-weight: 500; font-size: 0.95rem; cursor: pointer; }
-.topic-name:hover { color: var(--accent); }
-
-.topic-link-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  text-decoration: none;
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.15s;
-}
-.topic-link-btn:hover { background: rgba(88,166,255,0.1); border-color: var(--accent); }
-
-.toggle-all { font-size: 0.8rem; color: var(--accent); cursor: pointer; background: none; border: none; font-family: var(--font); font-weight: 600; }
-.toggle-all:hover { text-decoration: underline; }
+.topic-name { flex: 1; font-weight: 500; font-size: 0.95rem; }
 
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
 .modal.open { display: flex; }
@@ -122,7 +101,7 @@
     <a href="index.html">Dashboard</a>
     <a href="subjects.html">Subjects</a>
     <a href="sync.html">Sync</a>
-    <a href="login.html">Login</a>
+    <a href="#" id="authLink">Login</a>
   </div>
 </nav>
 
@@ -140,9 +119,9 @@
   <div class="section-header fade-up delay-2">
     <div>
       <p class="label">Topics</p>
-      <h2 style="margin-top:0.2rem">Click a topic to open its notes & questions</h2>
+      <h2 style="margin-top:0.2rem" id="topicsSubheading">Click a topic to mark it complete</h2>
     </div>
-    <div style="display:flex;gap:0.5rem">
+    <div style="display:flex;gap:0.5rem" id="customControls" style="display:none">
       <button class="btn btn-primary" id="addChapterBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add Chapter</button>
       <button class="btn btn-ghost" id="addTopicBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add Sub-topic</button>
       <button class="btn btn-ghost" id="editModeBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">Delete Mode</button>
@@ -185,7 +164,7 @@
     </div>
     <div class="input-group">
       <label>Sub-topics (one per line)</label>
-      <textarea id="newTopicsInput" rows="6" placeholder="Enter sub-topic names, one per line&#10;Example:&#10;Introduction to concepts&#10;Basic principles&#10;Advanced topics" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);resize:vertical"></textarea>
+      <textarea id="newTopicsInput" rows="6" placeholder="Enter sub-topic names, one per line" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);resize:vertical"></textarea>
     </div>
     <div style="display:flex;gap:0.75rem;margin-top:1rem">
       <button class="btn btn-primary" onclick="saveNewTopics()">Add Sub-topics</button>
@@ -200,6 +179,8 @@ setActiveNav();
 
 const params = new URLSearchParams(window.location.search);
 const subjectId = parseInt(params.get('id'));
+let currentSubject = null;
+let isCustomSubject = false;
 
 async function init() {
   const data = await loadData();
@@ -209,29 +190,40 @@ async function init() {
     return;
   }
 
-  // Merge with custom chapters/subtopics
+  currentSubject = subject;
+
+  // Check if this is a custom subject or built-in
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  isCustomSubject = !!customSubjects.find(s => s.id === subjectId) || !subject.topics;
+
+  // Merge with custom chapters/subtopics overlay
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   if (customOverlay[subjectId] && customOverlay[subjectId].chapters) {
     subject.customChapters = customOverlay[subjectId].chapters;
   }
 
-  document.title = `Study Time Table Tracker — ${subject.shortName}`;
-  document.getElementById('breadSubject').textContent = subject.shortName;
+  document.title = `Study Time Table Tracker — ${subject.shortName || subject.name}`;
+  document.getElementById('breadSubject').textContent = subject.shortName || subject.name;
+
+  // Show custom controls only for custom subjects OR if there are customChapters
+  const showCustomControls = isCustomSubject || (subject.customChapters && subject.customChapters.length > 0);
+  if (showCustomControls) {
+    document.getElementById('customControls').style.display = 'flex';
+    document.getElementById('addChapterBtn').addEventListener('click', openAddChapterModal);
+    document.getElementById('addTopicBtn').addEventListener('click', openAddTopicModal);
+    document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
+  }
 
   render(subject);
 
-  document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
-  
   // Check if we just added a chapter and should prompt for subtopics
   const newChapterId = sessionStorage.getItem('newChapterId');
   const newChapterName = sessionStorage.getItem('newChapterName');
   if (newChapterId && newChapterName) {
     sessionStorage.removeItem('newChapterId');
     sessionStorage.removeItem('newChapterName');
-    
     setTimeout(() => {
-      if (confirm(`Chapter "${newChapterName}" created! Would you like to add sub-topics to this chapter now?`)) {
-        // Pre-select the chapter in the dropdown
+      if (confirm(`Chapter "${newChapterName}" created! Would you like to add sub-topics now?`)) {
         document.getElementById('chapterSelect').value = newChapterId;
         openAddTopicModal();
       }
@@ -250,7 +242,7 @@ function render(subject) {
     <style>#subjectHeader::before { background: ${subject.color}; }</style>
     <div class="big-icon">${subject.icon}</div>
     <div class="header-info">
-      <p class="label">Subject ${subject.id} of 10</p>
+      <p class="label">CFA Level I</p>
       <h1 style="margin-top:0.2rem;margin-bottom:0.5rem">${subject.name}</h1>
       <div style="display:flex;align-items:center;gap:1.5rem">
         <div>
@@ -264,132 +256,123 @@ function render(subject) {
     </div>
   `;
 
-  // Topics list - ONLY show custom chapters and subtopics
   const list = document.getElementById('topicsList');
   let html = '';
-  
-  // Render custom chapters and their subtopics
+
+  // ── BUILT-IN SUBJECTS: render flat topics array ──
+  if (subject.topics && subject.topics.length > 0) {
+    subject.topics.forEach((topic, i) => {
+      const key = `s${subject.id}_t${topic.id}`;
+      const isDone = !!(completed[key] && completed[key] !== false);
+      html += `
+        <div class="topic-row ${isDone ? 'completed' : ''} fade-up" style="animation-delay:${Math.min(i * 0.02, 0.5) + 0.1}s" onclick="toggleBuiltInTopic(${topic.id}, this)">
+          <div class="topic-check ${isDone ? 'done' : ''}" onclick="toggleBuiltInTopic(${topic.id}, this.closest('.topic-row')); event.stopPropagation();">
+            ${isDone ? '✓' : ''}
+          </div>
+          <span class="topic-name">${topic.name}</span>
+        </div>`;
+    });
+  }
+
+  // ── CUSTOM CHAPTERS & SUBTOPICS ──
   if (subject.customChapters && subject.customChapters.length > 0) {
+    if (subject.topics && subject.topics.length > 0) {
+      html += `<div style="margin:1.5rem 0 0.75rem;font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Custom Chapters</div>`;
+    }
     subject.customChapters.forEach((chapter, i) => {
-      // Check if all subtopics are completed
-      const allSubtopicsComplete = chapter.subtopics && chapter.subtopics.length > 0 && 
+      const allDone = chapter.subtopics && chapter.subtopics.length > 0 &&
         chapter.subtopics.every(st => completed[`c${chapter.id}_st${st.id}`]);
-      const chapterCompletedClass = allSubtopicsComplete ? 'completed' : '';
-      
-      html += `<div class="topic-row chapter ${chapterCompletedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" onclick="toggleChapter(${chapter.id})">
-        <div class="topic-check ${allSubtopicsComplete ? 'done' : ''}" onclick="event.stopPropagation(); toggleChapter(${chapter.id});">
-          ${allSubtopicsComplete ? '✓' : ''}
-        </div>
-        <span class="topic-name" onclick="event.stopPropagation(); editChapter(${chapter.id}, '${chapter.name.replace(/'/g, "\\'")}'');">📖 ${chapter.name}</span>
-        <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn" onclick="event.stopPropagation()">📖 Open →</a>
-        <button class="delete-btn" onclick="event.stopPropagation(); deleteChapter(${chapter.id});">Delete</button>
-      </div>`;
-      
+      html += `
+        <div class="topic-row chapter ${allDone ? 'completed' : ''} fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+          <div class="topic-check ${allDone ? 'done' : ''}" onclick="toggleChapter(${chapter.id}); event.stopPropagation();">
+            ${allDone ? '✓' : ''}
+          </div>
+          <span class="topic-name">📖 ${chapter.name}</span>
+          <button class="delete-btn" onclick="event.stopPropagation(); deleteChapter(${chapter.id});">Delete</button>
+        </div>`;
       if (chapter.subtopics && chapter.subtopics.length > 0) {
         chapter.subtopics.forEach(subtopic => {
-          const subtopicKey = `c${chapter.id}_st${subtopic.id}`;
-          const isSubtopicDone = !!completed[subtopicKey];
-          const subtopicCompletedClass = isSubtopicDone ? 'completed' : '';
-          
-          html += `<div class="topic-row subtopic ${subtopicCompletedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-chapter="${chapter.id}" data-subtopic="${subtopic.id}">
-            <div class="topic-check ${isSubtopicDone ? 'done' : ''}" onclick="toggleSubtopic(${chapter.id}, ${subtopic.id}); event.stopPropagation();">
-              ${isSubtopicDone ? '✓' : ''}
-            </div>
-            <span class="topic-name" onclick="event.stopPropagation(); editSubtopic(${chapter.id}, ${subtopic.id}, '${subtopic.name.replace(/'/g, "\\'")}'');">• ${subtopic.name}</span>
-            <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn" onclick="event.stopPropagation()">📖 Open →</a>
-            <button class="delete-btn" onclick="event.stopPropagation(); deleteSubtopic(${chapter.id}, ${subtopic.id});">Delete</button>
-          </div>`;
+          const key = `c${chapter.id}_st${subtopic.id}`;
+          const isDone = !!completed[key];
+          html += `
+            <div class="topic-row subtopic ${isDone ? 'completed' : ''} fade-up" data-chapter="${chapter.id}" data-subtopic="${subtopic.id}">
+              <div class="topic-check ${isDone ? 'done' : ''}" onclick="toggleSubtopic(${chapter.id}, ${subtopic.id}, this); event.stopPropagation();">
+                ${isDone ? '✓' : ''}
+              </div>
+              <span class="topic-name">• ${subtopic.name}</span>
+              <button class="delete-btn" onclick="event.stopPropagation(); deleteSubtopic(${chapter.id}, ${subtopic.id});">Delete</button>
+            </div>`;
         });
       }
     });
-  } else {
-    html = '<p style="color:var(--text-dim);padding:2rem;text-align:center">No chapters yet. Click "+ Add Chapter" to get started.</p>';
   }
-  
+
+  if (!html) {
+    html = '<p style="color:var(--text-dim);padding:2rem;text-align:center">No topics found for this subject.</p>';
+  }
+
   list.innerHTML = html;
 }
 
-let editMode = false;
-
-function toggleChapter(chapterId) {
-  const data = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  let chapter;
-  if (customSubject) {
-    chapter = customSubject.topics.find(t => t.id === chapterId);
-  } else if (data[subjectId]) {
-    chapter = data[subjectId].chapters.find(c => c.id === chapterId);
-  }
-  
-  if (!chapter || !chapter.subtopics || chapter.subtopics.length === 0) return;
-  
+// ── TOGGLE BUILT-IN TOPIC ──
+function toggleBuiltInTopic(topicId, row) {
   const completed = getCompleted();
-  
-  // Check if all are currently complete
+  const key = `s${subjectId}_t${topicId}`;
+  const isDone = !!(completed[key] && completed[key] !== false);
+  completed[key] = isDone ? false : today();
+  saveCompleted(completed);
+
+  // Update UI without full reload
+  const checkbox = row.querySelector('.topic-check');
+  if (!isDone) {
+    checkbox.classList.add('done');
+    checkbox.innerHTML = '✓';
+    row.classList.add('completed');
+  } else {
+    checkbox.classList.remove('done');
+    checkbox.innerHTML = '';
+    row.classList.remove('completed');
+  }
+
+  // Update header progress
+  const allCompleted = getCompleted();
+  const total = countSubtopics(currentSubject);
+  const done = countCompletedSubtopics(currentSubject, allCompleted);
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const headerPct = document.querySelector('.header-pct');
+  if (headerPct) headerPct.textContent = pct + '%';
+  const statSub = document.querySelector('.stat-sub');
+  if (statSub) statSub.textContent = `${done} of ${total} topics completed`;
+  const progressFill = document.querySelector('#subjectHeader .progress-fill');
+  if (progressFill) progressFill.style.width = pct + '%';
+}
+
+// ── TOGGLE CHAPTER (all subtopics) ──
+function toggleChapter(chapterId) {
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  let chapter;
+  if (customOverlay[subjectId]) {
+    chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
+  }
+  if (!chapter || !chapter.subtopics || chapter.subtopics.length === 0) return;
+  const completed = getCompleted();
   const allComplete = chapter.subtopics.every(st => completed[`c${chapterId}_st${st.id}`]);
-  
-  // Toggle all subtopics
   chapter.subtopics.forEach(st => {
     completed[`c${chapterId}_st${st.id}`] = !allComplete;
   });
-  
   saveCompleted(completed);
   location.reload();
 }
 
-function toggleSubtopic(chapterId, subtopicId) {
+// ── TOGGLE SUBTOPIC ──
+function toggleSubtopic(chapterId, subtopicId, checkbox) {
   const completed = getCompleted();
   const key = `c${chapterId}_st${subtopicId}`;
-  const wasCompleted = completed[key];
-  completed[key] = !completed[key];
+  const isDone = !!completed[key];
+  completed[key] = !isDone;
   saveCompleted(completed);
-  
-  // Track topic completion in today's study log
-  if (!wasCompleted && completed[key]) {
-    const todayStr = today();
-    const log = getStudyLog();
-    let entry = log.find(l => l.date === todayStr);
-    
-    if (!entry) {
-      entry = { date: todayStr, hours: 0, topics: [] };
-      log.push(entry);
-    }
-    
-    if (!entry.topics) entry.topics = [];
-    
-    // Get subtopic name
-    const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-    const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-    const customSubject = customSubjects.find(s => s.id === subjectId);
-    
-    let subtopicName = '';
-    if (customSubject) {
-      const chapter = customSubject.topics.find(t => t.id === chapterId);
-      if (chapter && chapter.subtopics) {
-        const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
-        if (subtopic) subtopicName = subtopic.name;
-      }
-    } else if (customOverlay[subjectId]) {
-      const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
-      if (chapter && chapter.subtopics) {
-        const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
-        if (subtopic) subtopicName = subtopic.name;
-      }
-    }
-    
-    if (subtopicName && !entry.topics.includes(subtopicName)) {
-      entry.topics.push(subtopicName);
-      saveStudyLog(log);
-    }
-  }
-  
-  // Update UI without full reload
-  const checkbox = event.target;
   const row = checkbox.closest('.topic-row');
-  
-  if (completed[key]) {
+  if (!isDone) {
     checkbox.classList.add('done');
     checkbox.innerHTML = '✓';
     row.classList.add('completed');
@@ -400,11 +383,12 @@ function toggleSubtopic(chapterId, subtopicId) {
   }
 }
 
+// ── EDIT MODE ──
+let editMode = false;
 function toggleEditMode() {
   editMode = !editMode;
   const list = document.getElementById('topicsList');
   const btn = document.getElementById('editModeBtn');
-  
   if (editMode) {
     list.classList.add('edit-mode');
     btn.textContent = 'Done';
@@ -418,273 +402,95 @@ function toggleEditMode() {
   }
 }
 
-function editChapter(chapterId, currentName) {
-  const newName = prompt('Edit chapter name:', currentName);
-  if (!newName || newName.trim() === '' || newName === currentName) return;
-  
-  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  if (customSubject) {
-    const chapter = customSubject.topics.find(t => t.id === chapterId);
-    if (chapter) {
-      chapter.name = newName.trim();
-      localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    }
-  } else if (customOverlay[subjectId]) {
-    const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
-    if (chapter) {
-      chapter.name = newName.trim();
-      localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
-    }
-  }
-  
-  location.reload();
-}
-
-function editSubtopic(chapterId, subtopicId, currentName) {
-  const newName = prompt('Edit sub-topic name:', currentName);
-  if (!newName || newName.trim() === '' || newName === currentName) return;
-  
-  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  if (customSubject) {
-    const chapter = customSubject.topics.find(t => t.id === chapterId);
-    if (chapter && chapter.subtopics) {
-      const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
-      if (subtopic) {
-        subtopic.name = newName.trim();
-        localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-      }
-    }
-  } else if (customOverlay[subjectId]) {
-    const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
-    if (chapter && chapter.subtopics) {
-      const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
-      if (subtopic) {
-        subtopic.name = newName.trim();
-        localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
-      }
-    }
-  }
-  
-  location.reload();
-}
-
-let currentSubject = null;
-
+// ── ADD CHAPTER ──
 function openAddChapterModal() {
   document.getElementById('addChapterModal').classList.add('open');
 }
-
 function closeAddChapterModal() {
   document.getElementById('addChapterModal').classList.remove('open');
   document.getElementById('newChapterName').value = '';
 }
-
 function saveNewChapter() {
   const name = document.getElementById('newChapterName').value.trim();
-  if (!name) {
-    alert('Please enter a chapter name');
-    return;
-  }
-  
-  let customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  let subject = customSubjects.find(s => s.id === subjectId);
-  
-  let newChapterId;
-  
-  if (!subject) {
-    // Create a custom overlay for this subject
-    const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-    if (!customOverlay[subjectId]) {
-      customOverlay[subjectId] = { chapters: [] };
-    }
-    
-    newChapterId = Date.now();
-    customOverlay[subjectId].chapters.push({
-      id: newChapterId,
-      name: name,
-      isChapter: true,
-      notes: '',
-      questions: [],
-      subtopics: []
-    });
-    
-    localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
-  } else {
-    const newTopicId = Math.max(0, ...subject.topics.map(t => t.id)) + 1;
-    newChapterId = newTopicId;
-    subject.topics.push({
-      id: newTopicId,
-      name: name,
-      isChapter: true,
-      notes: '',
-      questions: [],
-      subtopics: []
-    });
-    localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-  }
-  
+  if (!name) { alert('Please enter a chapter name'); return; }
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  if (!customOverlay[subjectId]) customOverlay[subjectId] = { chapters: [] };
+  const newChapterId = Date.now();
+  customOverlay[subjectId].chapters.push({ id: newChapterId, name, isChapter: true, notes: '', questions: [], subtopics: [] });
+  localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
   closeAddChapterModal();
-  
-  // Store the new chapter ID and show prompt to add subtopics
   sessionStorage.setItem('newChapterId', newChapterId);
   sessionStorage.setItem('newChapterName', name);
-  
   location.reload();
 }
 
+// ── ADD SUBTOPICS ──
 function openAddTopicModal() {
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  let chapters = [];
-  
-  if (customSubject) {
-    chapters = customSubject.topics.filter(t => t.isChapter);
-  } else if (customOverlay[subjectId]) {
-    chapters = customOverlay[subjectId].chapters || [];
-  }
-  
-  if (chapters.length === 0) {
-    alert('Please add a chapter first before adding sub-topics');
-    return;
-  }
-  
+  const chapters = (customOverlay[subjectId] && customOverlay[subjectId].chapters) || [];
+  if (chapters.length === 0) { alert('Please add a chapter first before adding sub-topics'); return; }
   const select = document.getElementById('chapterSelect');
-  select.innerHTML = '<option value="">Select a chapter...</option>' + 
+  select.innerHTML = '<option value="">Select a chapter...</option>' +
     chapters.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  
-  // If there's a pre-selected chapter from sessionStorage, select it
-  const preSelectedChapter = sessionStorage.getItem('newChapterId');
-  if (preSelectedChapter) {
-    select.value = preSelectedChapter;
-  }
-  
+  const preSelected = sessionStorage.getItem('newChapterId');
+  if (preSelected) select.value = preSelected;
   document.getElementById('addTopicModal').classList.add('open');
 }
-
 function closeAddTopicModal() {
   document.getElementById('addTopicModal').classList.remove('open');
   document.getElementById('newTopicsInput').value = '';
   document.getElementById('chapterSelect').value = '';
 }
-
 function saveNewTopics() {
   const topicsText = document.getElementById('newTopicsInput').value.trim();
   const parentId = parseInt(document.getElementById('chapterSelect').value);
-  
-  if (!topicsText) {
-    alert('Please enter at least one sub-topic name');
-    return;
-  }
-  
-  if (!parentId) {
-    alert('Please select a chapter');
-    return;
-  }
-  
-  // Split by newlines and filter empty lines
+  if (!topicsText) { alert('Please enter at least one sub-topic name'); return; }
+  if (!parentId) { alert('Please select a chapter'); return; }
   const topicNames = topicsText.split('\n').map(t => t.trim()).filter(t => t.length > 0);
-  
-  if (topicNames.length === 0) {
-    alert('Please enter at least one sub-topic name');
-    return;
-  }
-  
+  if (topicNames.length === 0) { alert('Please enter at least one sub-topic name'); return; }
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  if (customSubject) {
-    const chapter = customSubject.topics.find(t => t.id === parentId);
-    if (chapter) {
-      if (!chapter.subtopics) chapter.subtopics = [];
-      topicNames.forEach(name => {
-        const newSubtopicId = Date.now() + Math.random();
-        chapter.subtopics.push({
-          id: newSubtopicId,
-          name: name,
-          parentId: parentId
-        });
-      });
-      localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    }
-  } else {
-    if (!customOverlay[subjectId]) customOverlay[subjectId] = { chapters: [] };
-    const chapter = customOverlay[subjectId].chapters.find(c => c.id === parentId);
-    if (chapter) {
-      if (!chapter.subtopics) chapter.subtopics = [];
-      topicNames.forEach(name => {
-        const newSubtopicId = Date.now() + Math.random();
-        chapter.subtopics.push({
-          id: newSubtopicId,
-          name: name,
-          parentId: parentId
-        });
-      });
-      localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
-    }
+  if (!customOverlay[subjectId]) customOverlay[subjectId] = { chapters: [] };
+  const chapter = customOverlay[subjectId].chapters.find(c => c.id === parentId);
+  if (chapter) {
+    if (!chapter.subtopics) chapter.subtopics = [];
+    topicNames.forEach(name => {
+      chapter.subtopics.push({ id: Date.now() + Math.random(), name, parentId });
+    });
+    localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
   }
-  
   closeAddTopicModal();
   location.reload();
 }
 
+// ── DELETE ──
 function deleteChapter(chapterId) {
   if (!confirm('Delete this chapter and all its sub-topics?')) return;
-  
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  if (customSubject) {
-    customSubject.topics = customSubject.topics.filter(t => t.id !== chapterId);
-    localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-  } else if (customOverlay[subjectId]) {
+  if (customOverlay[subjectId]) {
     customOverlay[subjectId].chapters = customOverlay[subjectId].chapters.filter(c => c.id !== chapterId);
     localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
   }
-  
   location.reload();
 }
-
 function deleteSubtopic(chapterId, subtopicId) {
   if (!confirm('Delete this sub-topic?')) return;
-  
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const customSubject = customSubjects.find(s => s.id === subjectId);
-  
-  if (customSubject) {
-    const chapter = customSubject.topics.find(t => t.id === chapterId);
-    if (chapter && chapter.subtopics) {
-      chapter.subtopics = chapter.subtopics.filter(st => st.id !== subtopicId);
-      localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    }
-  } else if (customOverlay[subjectId]) {
+  if (customOverlay[subjectId]) {
     const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
     if (chapter && chapter.subtopics) {
       chapter.subtopics = chapter.subtopics.filter(st => st.id !== subtopicId);
       localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
     }
   }
-  
-  // Also remove completion status
   const completed = getCompleted();
   delete completed[`c${chapterId}_st${subtopicId}`];
   saveCompleted(completed);
-  
   location.reload();
 }
 
-document.getElementById('addChapterBtn').addEventListener('click', openAddChapterModal);
-document.getElementById('addTopicBtn').addEventListener('click', openAddTopicModal);
+// Close modals on outside click
+document.getElementById('addChapterModal').addEventListener('click', function(e) { if (e.target === this) closeAddChapterModal(); });
+document.getElementById('addTopicModal').addEventListener('click', function(e) { if (e.target === this) closeAddTopicModal(); });
 
 init();
 </script>
