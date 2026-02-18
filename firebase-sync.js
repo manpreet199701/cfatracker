@@ -135,6 +135,16 @@ async function pushToCloud(reason = 'change') {
   }
 }
 
+function waitForSyncIdle() {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!syncing && !pendingReason) { resolve(); return; }
+      setTimeout(check, 150);
+    };
+    check();
+  });
+}
+
 function queueCloudSync(reason = 'change') {
   if (!currentUser) return;
   if (syncTimer) clearTimeout(syncTimer);
@@ -239,6 +249,10 @@ onAuthStateChanged(auth, (user) => {
 window.queueCloudSync = queueCloudSync;
 window.pullCloudData  = () => pullFromCloud('manual');
 window.cloudSyncReady = authReady;
+window.forceCloudSync = async (reason = 'manual-save') => {
+  await pushToCloud(reason);
+  await waitForSyncIdle();
+};
 window.firebaseSignOut = async () => {
   try {
     await signOut(auth);
