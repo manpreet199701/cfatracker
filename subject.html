@@ -39,7 +39,17 @@
   transition: all 0.15s;
   cursor: pointer;
 }
-.topic-row:hover { background: var(--surface2); border-color: #444C56; }
+.topic-row.chapter {
+  background: var(--surface2);
+  font-weight: 600;
+  cursor: default;
+  border-left: 3px solid var(--accent);
+}
+.topic-row.subtopic {
+  margin-left: 2rem;
+  border-left: 2px solid var(--border);
+}
+.topic-row:hover:not(.chapter) { background: var(--surface2); border-color: #444C56; }
 .topic-row.completed { opacity: 0.55; }
 .topic-row.completed .topic-name { text-decoration: line-through; color: var(--text-muted); }
 
@@ -115,7 +125,8 @@
       <h2 style="margin-top:0.2rem">Click a topic to open its notes & questions</h2>
     </div>
     <div style="display:flex;gap:0.5rem">
-      <button class="btn btn-primary" id="addTopicBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add Topic</button>
+      <button class="btn btn-primary" id="addChapterBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add Chapter</button>
+      <button class="btn btn-ghost" id="addTopicBtn" style="padding:0.4rem 0.8rem;font-size:0.8rem">+ Add Sub-topic</button>
       <button class="toggle-all" id="toggleAllBtn">Mark all complete</button>
     </div>
   </div>
@@ -123,19 +134,43 @@
   <div id="topicsList" class="topics-list" style="margin-top:1rem"></div>
 </div>
 
+<!-- ADD CHAPTER MODAL -->
+<div id="addChapterModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0">Add New Chapter</h3>
+      <button class="modal-close" onclick="closeAddChapterModal()">&times;</button>
+    </div>
+    <div class="input-group">
+      <label>Chapter Name</label>
+      <input id="newChapterName" type="text" placeholder="Enter chapter name"/>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button class="btn btn-primary" onclick="saveNewChapter()">Add Chapter</button>
+      <button class="btn btn-ghost" onclick="closeAddChapterModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD TOPIC MODAL -->
 <div id="addTopicModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 style="margin:0">Add New Topic</h3>
+      <h3 style="margin:0">Add Sub-topic</h3>
       <button class="modal-close" onclick="closeAddTopicModal()">&times;</button>
     </div>
     <div class="input-group">
-      <label>Topic Name</label>
-      <input id="newTopicName" type="text" placeholder="Enter topic name"/>
+      <label>Select Chapter</label>
+      <select id="chapterSelect" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font)">
+        <option value="">Select a chapter...</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Sub-topic Name</label>
+      <input id="newTopicName" type="text" placeholder="Enter sub-topic name"/>
     </div>
     <div style="display:flex;gap:0.75rem;margin-top:1rem">
-      <button class="btn btn-primary" onclick="saveNewTopic()">Add Topic</button>
+      <button class="btn btn-primary" onclick="saveNewTopic()">Add Sub-topic</button>
       <button class="btn btn-ghost" onclick="closeAddTopicModal()">Cancel</button>
     </div>
   </div>
@@ -204,17 +239,27 @@ function render(subject) {
   const list = document.getElementById('topicsList');
   list.innerHTML = subject.topics.map((t, i) => {
     const isDone = !!completed[`s${subject.id}_t${t.id}`];
-    return `<div class="topic-row ${isDone ? 'completed' : ''} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-sid="${subject.id}" data-tid="${t.id}">
+    const isChapter = t.isChapter || false;
+    const rowClass = isChapter ? 'topic-row chapter' : (t.parentId ? 'topic-row subtopic' : 'topic-row');
+    const completedClass = isDone && !isChapter ? 'completed' : '';
+    
+    if (isChapter) {
+      return `<div class="${rowClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+        <span class="topic-name">📖 ${t.name}</span>
+      </div>`;
+    }
+    
+    return `<div class="${rowClass} ${completedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-sid="${subject.id}" data-tid="${t.id}">
       <div class="topic-check ${isDone ? 'done' : ''}" data-check="${subject.id}_${t.id}">
         ${isDone ? '✓' : ''}
       </div>
-      <span class="topic-name">${i + 1}. ${t.name}</span>
+      <span class="topic-name">${t.name}</span>
       <a href="topic.html?subject=${subject.id}&topic=${t.id}" class="topic-link-btn">📖 Open →</a>
     </div>`;
   }).join('');
 
   // Click to toggle completion
-  list.querySelectorAll('.topic-row').forEach(row => {
+  list.querySelectorAll('.topic-row:not(.chapter)').forEach(row => {
     row.addEventListener('click', (e) => {
       // Don't toggle when clicking the link
       if (e.target.closest('.topic-link-btn')) return;
@@ -226,19 +271,21 @@ function render(subject) {
   });
 }
 
-function openAddTopicModal() {
-  document.getElementById('addTopicModal').classList.add('open');
+let currentSubject = null;
+
+function openAddChapterModal() {
+  document.getElementById('addChapterModal').classList.add('open');
 }
 
-function closeAddTopicModal() {
-  document.getElementById('addTopicModal').classList.remove('open');
-  document.getElementById('newTopicName').value = '';
+function closeAddChapterModal() {
+  document.getElementById('addChapterModal').classList.remove('open');
+  document.getElementById('newChapterName').value = '';
 }
 
-function saveNewTopic() {
-  const name = document.getElementById('newTopicName').value.trim();
+function saveNewChapter() {
+  const name = document.getElementById('newChapterName').value.trim();
   if (!name) {
-    alert('Please enter a topic name');
+    alert('Please enter a chapter name');
     return;
   }
   
@@ -246,21 +293,82 @@ function saveNewTopic() {
   const subject = customSubjects.find(s => s.id === subjectId);
   
   if (subject) {
-    const newTopicId = subject.topics.length + 1;
+    const newTopicId = Math.max(0, ...subject.topics.map(t => t.id)) + 1;
     subject.topics.push({
       id: newTopicId,
       name: name,
+      isChapter: true,
       notes: '',
       questions: []
     });
     localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    closeAddTopicModal();
+    closeAddChapterModal();
     location.reload();
   } else {
-    alert('Can only add topics to custom subjects');
+    alert('Can only add chapters to custom subjects');
   }
 }
 
+function openAddTopicModal() {
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const subject = customSubjects.find(s => s.id === subjectId);
+  
+  if (!subject) {
+    alert('Can only add sub-topics to custom subjects');
+    return;
+  }
+  
+  // Populate chapter dropdown
+  const chapters = subject.topics.filter(t => t.isChapter);
+  const select = document.getElementById('chapterSelect');
+  select.innerHTML = '<option value="">Select a chapter...</option>' + 
+    chapters.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  
+  document.getElementById('addTopicModal').classList.add('open');
+}
+
+function closeAddTopicModal() {
+  document.getElementById('addTopicModal').classList.remove('open');
+  document.getElementById('newTopicName').value = '';
+  document.getElementById('chapterSelect').value = '';
+}
+
+function saveNewTopic() {
+  const name = document.getElementById('newTopicName').value.trim();
+  const parentId = parseInt(document.getElementById('chapterSelect').value);
+  
+  if (!name) {
+    alert('Please enter a sub-topic name');
+    return;
+  }
+  
+  if (!parentId) {
+    alert('Please select a chapter');
+    return;
+  }
+  
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const subject = customSubjects.find(s => s.id === subjectId);
+  
+  if (subject) {
+    const newTopicId = Math.max(0, ...subject.topics.map(t => t.id)) + 1;
+    const parentIndex = subject.topics.findIndex(t => t.id === parentId);
+    
+    subject.topics.splice(parentIndex + 1, 0, {
+      id: newTopicId,
+      name: name,
+      parentId: parentId,
+      notes: '',
+      questions: []
+    });
+    
+    localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+    closeAddTopicModal();
+    location.reload();
+  }
+}
+
+document.getElementById('addChapterBtn').addEventListener('click', openAddChapterModal);
 document.getElementById('addTopicBtn').addEventListener('click', openAddTopicModal);
 
 init();
