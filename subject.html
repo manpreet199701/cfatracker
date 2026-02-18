@@ -371,7 +371,7 @@ async function init() {
     subject.customChapters = [];
     persistSubject();
   }
-  document.title = `CFA Tracker – ${subject.shortName || subject.name}`;
+  document.title = `Study Time Table Tracker – ${subject.shortName || subject.name}`;
   document.getElementById('breadSubject').textContent = subject.shortName || subject.name;
   render();
 }
@@ -662,7 +662,7 @@ document.getElementById('editSaveBtn').addEventListener('click', () => {
   persistSubject();
   closeEditModal();
   document.getElementById('breadSubject').textContent = subject.shortName || subject.name;
-  document.title = `CFA Tracker – ${subject.shortName || subject.name}`;
+  document.title = `Study Time Table Tracker – ${subject.shortName || subject.name}`;
   render();
 });
 
