@@ -1,6 +1,6 @@
 // ── STORAGE KEYS ──
 const KEYS = {
-  studyLog: 'cfa_study_log',       // [{date:'YYYY-MM-DD', hours:2.5}]
+  studyLog: 'cfa_study_log',       // [{date:'YYYY-MM-DD', hours:2.5, topics:[]}]
   dailyGoal: 'cfa_daily_goal',     // number
   completed: 'cfa_completed',      // {`s${id}_t${id}`: true}
 };
