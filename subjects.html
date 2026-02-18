@@ -22,10 +22,12 @@
 .summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
 .summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
 .subjects-mini-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
-.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; }
+.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; position: relative; }
 .subj-mini:hover { background: var(--surface2); }
 .subj-mini-name { font-size: 0.78rem; font-weight: 600; }
 .subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
+.delete-mini-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.65rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
+.edit-mode-mini .delete-mini-btn { display: block; }
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
 .modal.open { display: flex; }
 .modal-content { background: var(--surface); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
@@ -58,7 +60,10 @@
   </div>
   <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
   <div class="card fade-up delay-2" style="margin-bottom:1.5rem">
-    <p class="label" style="margin-bottom:1rem">Subject Progress Overview</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <p class="label">Subject Progress Overview</p>
+      <button id="editModeMiniBtn" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.75rem">Edit</button>
+    </div>
     <div id="subjectsMiniGrid" class="subjects-mini-grid"></div>
   </div>
   <div id="subjectsGrid" class="subjects-page-grid"></div>
@@ -113,7 +118,9 @@ async function init() {
     const total = countSubtopics(s);
     const done = countCompletedSubtopics(s, completed);
     const pct = total ? Math.round(done / total * 100) : 0;
+    const deleteBtn = s.custom ? `<button class="delete-mini-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
     return `<a href="subject.html?id=${s.id}" class="subj-mini">
+      ${deleteBtn}
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span class="subj-mini-name">${s.icon} ${s.shortName || s.name}</span>
         <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
@@ -152,6 +159,14 @@ function toggleEditMode() {
   if (editMode) { grid.classList.add('edit-mode'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
   else { grid.classList.remove('edit-mode'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
 }
+let editModeMini = false;
+function toggleEditModeMini() {
+  editModeMini = !editModeMini;
+  const grid = document.getElementById('subjectsMiniGrid');
+  const btn = document.getElementById('editModeMiniBtn');
+  if (editModeMini) { grid.classList.add('edit-mode-mini'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  else { grid.classList.remove('edit-mode-mini'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+}
 function deleteSubject(subjectId) {
   if (!confirm('Delete this subject?')) return;
   let cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
@@ -181,6 +196,7 @@ function saveNewSubject() {
 }
 document.getElementById('addSubjectModal').addEventListener('click', function(e) { if (e.target === this) closeAddSubjectModal(); });
 document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
+document.getElementById('editModeMiniBtn').addEventListener('click', toggleEditModeMini);
 document.getElementById('addSubjectBtn').addEventListener('click', openAddSubjectModal);
 init();
 </script>
