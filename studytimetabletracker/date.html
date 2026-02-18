@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Log — Date Detail</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.detail-card { max-width:600px; margin:2rem auto; }
+.topic-item { display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.5rem; }
+.topic-subject { font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem; }
+.hours-display { font-size:3rem; font-weight:700; color:var(--accent); font-family:var(--mono); }
+.big-input { font-family:var(--mono); font-size:2.5rem; font-weight:600; background:transparent; border:none; border-bottom:2px solid var(--border); border-radius:0; color:var(--accent); width:120px; padding:0; }
+.big-input:focus { outline:none; border-color:var(--accent); }
+.section-divider { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">← Dashboard</a>
+  </div>
+</nav>
+<div class="page">
+  <div class="detail-card card fade-up">
+    <p class="label">Study Session</p>
+    <h2 id="displayDate" style="margin-top:0.25rem;margin-bottom:1.5rem">—</h2>
+
+    <!-- HOURS SECTION -->
+    <div id="hasHours" style="display:none">
+      <p class="label">Hours Studied</p>
+      <div class="hours-display" id="hoursDisplay">0h</div>
+      <hr class="section-divider"/>
+      <p class="label" style="margin-bottom:0.5rem">Update Hours</p>
+      <div style="display:flex;align-items:flex-end;gap:1rem">
+        <input id="editHours" class="big-input" type="number" min="0" max="24" step="0.5"/>
+        <span style="color:var(--text-dim);padding-bottom:0.5rem">hrs</span>
+        <button class="btn btn-primary" onclick="saveHours()">Update</button>
+      </div>
+    </div>
+
+    <div id="noHours" style="display:none">
+      <p style="font-size:2rem;margin-bottom:0.5rem">⏱️</p>
+      <p style="font-weight:600;margin-bottom:0.25rem">No hours logged for this day</p>
+      <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.5rem">How many hours did you study?</p>
+      <div style="display:flex;align-items:flex-end;gap:1rem">
+        <input id="newHours" class="big-input" type="number" min="0" max="24" step="0.5" placeholder="0"/>
+        <span style="color:var(--text-dim);padding-bottom:0.5rem">hrs</span>
+        <button class="btn btn-primary" onclick="saveNewHours()">Save</button>
+      </div>
+    </div>
+
+    <!-- TOPICS SECTION -->
+    <hr class="section-divider"/>
+    <p class="label" style="margin-bottom:0.75rem">Topics Completed This Day</p>
+    <div id="topicsList"></div>
+
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const dateStr = params.get('date');
+if (!dateStr) window.location.href = 'index.html';
+
+const dateObj = new Date(dateStr + 'T12:00:00');
+document.getElementById('displayDate').textContent = dateObj.toLocaleDateString('en-US', {
+  weekday:'long', year:'numeric', month:'long', day:'numeric'
+});
+
+async function init() {
+  const DATA = await loadData();
+  const log = getStudyLog();
+  const entry = log.find(l => l.date === dateStr);
+  const completed = getCompleted();
+
+  // Hours section
+  if (entry && entry.hours > 0) {
+    document.getElementById('hasHours').style.display = 'block';
+    document.getElementById('noHours').style.display = 'none';
+    document.getElementById('hoursDisplay').textContent = entry.hours + 'h';
+    document.getElementById('editHours').value = entry.hours;
+  } else {
+    document.getElementById('hasHours').style.display = 'none';
+    document.getElementById('noHours').style.display = 'block';
+  }
+
+  // Topics section — find all topics completed on this date
+  const topicsEl = document.getElementById('topicsList');
+  const todayTopics = [];
+
+  DATA.subjects.forEach(subject => {
+    if (subject.customChapters) {
+      subject.customChapters.forEach(chapter => {
+        if (chapter.subtopics) {
+          chapter.subtopics.forEach(subtopic => {
+            const key = `c${chapter.id}_st${subtopic.id}`;
+            if (completed[key] === dateStr) {
+              todayTopics.push({
+                subject: subject.name,
+                icon: subject.icon || '📚',
+                chapter: chapter.name,
+                topic: subtopic.name,
+                color: subject.color || 'var(--accent)'
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  if (todayTopics.length > 0) {
+    topicsEl.innerHTML = todayTopics.map(t => `
+      <div class="topic-item">
+        <div>
+          <div style="font-weight:600">${t.topic}</div>
+          <div class="topic-subject">${t.icon} ${t.subject} · ${t.chapter}</div>
+        </div>
+        <div style="width:10px;height:10px;border-radius:50%;background:${t.color}"></div>
+      </div>`).join('');
+  } else {
+    topicsEl.innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem">No topics recorded for this day</p>';
+  }
+}
+
+function saveHours() {
+  const h = parseFloat(document.getElementById('editHours').value);
+  if (isNaN(h) || h < 0) return;
+  logHoursForDate(dateStr, h);
+  init();
+}
+
+function saveNewHours() {
+  const h = parseFloat(document.getElementById('newHours').value);
+  if (isNaN(h) || h <= 0) { alert('Please enter hours greater than 0'); return; }
+  logHoursForDate(dateStr, h);
+  init();
+}
+
+init();
+</script>
+</body>
+</html>

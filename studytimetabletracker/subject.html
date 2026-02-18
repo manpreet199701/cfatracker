@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Time Table Tracker - Subject</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.subject-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 2rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.subject-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.subject-header .big-icon { font-size: 3.5rem; flex-shrink: 0; }
+.subject-header .header-info { flex: 1; min-width: 0; }
+.subject-header .header-pct { font-family: var(--mono); font-size: 2rem; font-weight: 700; }
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.hdr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.hdr-btn:hover { background: var(--surface); color: var(--text); border-color: #555; }
+.hdr-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.hdr-btn.primary:hover { opacity: 0.85; }
+.hdr-btn.danger:hover { background: rgba(248,81,73,0.12); color: #f85149; border-color: #f85149; }
+.chapter-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.chapter-title { flex: 1; font-weight: 700; font-size: 0.9rem; }
+.chapter-meta { font-size: 0.75rem; color: var(--text-muted); font-family: var(--mono); }
+.chapter-actions { display: flex; gap: 0.35rem; }
+.ch-btn {
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.12s;
+}
+.ch-btn:hover { background: var(--surface2); color: var(--text); }
+.ch-btn.danger:hover { background: rgba(248,81,73,0.12); color: #f85149; border-color: #f85149; }
+.topics-list { display: flex; flex-direction: column; }
+.topic-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+  cursor: pointer;
+}
+.topic-row:last-child { border-bottom: none; }
+.topic-row:hover { background: rgba(255,255,255,0.03); }
+.topic-row.completed { opacity: 0.5; }
+.topic-row.completed .topic-name { text-decoration: line-through; color: var(--text-muted); }
+.topic-check {
+  width: 21px; height: 21px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: all 0.18s;
+}
+.topic-check.done { border-color: var(--success); background: var(--success); color: #fff; }
+.topic-name { flex: 1; font-size: 0.92rem; font-weight: 500; }
+.topic-del-btn {
+  opacity: 0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: none;
+  color: #f85149;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.topic-row:hover .topic-del-btn { opacity: 1; border-color: rgba(248,81,73,0.3); }
+.topic-del-btn:hover { background: rgba(248,81,73,0.12); }
+.add-subtopic-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  background: rgba(88,166,255,0.04);
+  border-top: 1px dashed rgba(88,166,255,0.2);
+}
+.add-subtopic-row input {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+}
+.add-subtopic-row input:focus { outline: none; border-color: var(--accent); }
+.add-subtopic-row button {
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.add-subtopic-row button:hover { opacity: 0.85; }
+.chapter-empty {
+  padding: 1.2rem 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.no-chapters {
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+}
+.no-chapters .nc-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+.no-chapters p { margin: 0 0 1.25rem; font-size: 0.92rem; line-height: 1.6; }
+.toggle-all {
+  font-size: 0.8rem; color: var(--accent);
+  cursor: pointer; background: none; border: none;
+  font-family: var(--font); font-weight: 600;
+}
+.toggle-all:hover { text-decoration: underline; }
+.modal {
+  display: none; position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1.75rem;
+  max-width: 440px; width: 92%;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+}
+.modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.25rem;
+}
+.modal-head h3 { margin: 0; font-size: 1.05rem; }
+.modal-x { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-dim); line-height: 1; }
+.modal-x:hover { color: var(--text); }
+.fg { margin-bottom: 1rem; }
+.fg label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; }
+.fg input {
+  width: 100%; padding: 0.55rem 0.85rem;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  font-family: var(--font); font-size: 0.9rem; box-sizing: border-box;
+}
+.fg input:focus { outline: none; border-color: var(--accent); }
+.modal-foot { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+.confirm-box { max-width: 380px; text-align: center; }
+.confirm-box p { color: var(--text-muted); margin: 0.4rem 0 1.5rem; font-size: 0.9rem; line-height: 1.55; }
+.confirm-box .modal-foot { justify-content: center; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">CFA <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+    <a href="sync.html">Sync</a>
+    <a href="login.html" id="loginLink">Profile</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="breadcrumb fade-up">
+    <a href="index.html">Home</a>
+    <span>›</span>
+    <a href="subjects.html">Subjects</a>
+    <span>›</span>
+    <span id="breadSubject">Subject</span>
+  </div>
+
+  <div id="subjectHeader" class="subject-header fade-up delay-1"></div>
+
+  <div class="section-header fade-up delay-2" style="margin-bottom:1rem">
+    <div>
+      <p class="label">Chapters &amp; Topics</p>
+      <h2 style="margin-top:0.2rem">Manage your chapters and subtopics</h2>
+    </div>
+    <button class="toggle-all" id="toggleAllBtn">Mark all complete</button>
+  </div>
+
+  <div id="chaptersWrap" class="fade-up delay-3"></div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Edit Subject</h3>
+      <button class="modal-x" id="editModalX">x</button>
+    </div>
+    <div class="fg"><label>Subject Name</label><input type="text" id="editName"/></div>
+    <div class="fg"><label>Short Name</label><input type="text" id="editShortName"/></div>
+    <div class="fg"><label>Icon (emoji)</label><input type="text" id="editIcon" maxlength="4"/></div>
+    <div class="fg"><label>Color</label><input type="color" id="editColor"/></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="editCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="editSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Rename Chapter Modal -->
+<div id="chapterModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="chapterModalTitle">Add Chapter</h3>
+      <button class="modal-x" id="chapterModalX">x</button>
+    </div>
+    <div class="fg">
+      <label>Chapter Name</label>
+      <input type="text" id="chapterName" placeholder="e.g. Introduction to Equities"/>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="chapterCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="chapterSaveBtn">Save Chapter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="confirmModal" class="modal">
+  <div class="modal-box confirm-box">
+    <div class="modal-head" style="justify-content:center;margin-bottom:0.25rem">
+      <h3 id="confirmTitle">Delete</h3>
+    </div>
+    <p id="confirmText">Are you sure?</p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+const params    = new URLSearchParams(window.location.search);
+const subjectId = parseInt(params.get('id'));
+let   subject   = null;
+
+function isCustom(id) {
+  return JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]').some(s => s.id === id);
+}
+function getCustomSubjects() {
+  return JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+}
+function saveCustomSubjects(arr) {
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(arr));
+}
+function persistSubject() {
+  if (isCustom(subject.id)) {
+    const arr = getCustomSubjects();
+    const idx = arr.findIndex(s => s.id === subject.id);
+    if (idx !== -1) { arr[idx] = subject; saveCustomSubjects(arr); }
+  } else {
+    const overlays = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+    if (!overlays[subject.id]) overlays[subject.id] = {};
+    overlays[subject.id].chapters = subject.customChapters;
+    localStorage.setItem('cfa_subject_overlays', JSON.stringify(overlays));
+  }
+}
+function nextChapterId() {
+  const ids = (subject.customChapters || []).map(c => c.id);
+  return ids.length ? Math.max(...ids) + 1 : Date.now();
+}
+function nextSubtopicId(chapter) {
+  const ids = (chapter.subtopics || []).map(s => s.id);
+  return ids.length ? Math.max(...ids) + 1 : Date.now();
+}
+
+async function init() {
+  const data = await loadData();
+  subject = data.subjects.find(s => s.id === subjectId);
+  if (!subject) {
+    document.body.innerHTML = '<div class="page"><h2>Subject not found.</h2><a href="subjects.html">Back</a></div>';
+    return;
+  }
+  if (isCustom(subject.id) && !subject.customChapters) {
+    subject.customChapters = [];
+    persistSubject();
+  }
+  document.title = 'Study Time Table Tracker - ' + (subject.shortName || subject.name);
+  document.getElementById('breadSubject').textContent = subject.shortName || subject.name;
+  render();
+}
+
+function render() {
+  const completed = getCompleted();
+  const total     = countSubtopics(subject);
+  const done      = countCompletedSubtopics(subject, completed);
+  const pct       = total ? Math.round(done / total * 100) : 0;
+  const custom    = isCustom(subject.id);
+
+  const actionsHTML = '<div class="header-actions">' +
+    '<button class="hdr-btn primary" id="addChapterBtn">+ Add Chapter</button>' +
+    (custom ? '<button class="hdr-btn" id="editSubjectBtn">Edit</button>' : '') +
+    (custom ? '<button class="hdr-btn danger" id="deleteSubjectBtn">Delete</button>' : '') +
+    '</div>';
+
+  document.getElementById('subjectHeader').innerHTML =
+    '<style>#subjectHeader::before { background: ' + subject.color + '; }</style>' +
+    '<div class="big-icon">' + subject.icon + '</div>' +
+    '<div class="header-info">' +
+    '<p class="label">Subject</p>' +
+    '<h1 style="margin:0.2rem 0 0.4rem">' + subject.name + '</h1>' +
+    '<div class="header-pct" style="color:' + subject.color + '">' + pct + '%</div>' +
+    '<div class="stat-sub">' + done + ' of ' + total + ' topics completed</div>' +
+    '<div class="progress-track" style="margin-top:0.8rem;max-width:400px">' +
+    '<div class="progress-fill" style="width:' + pct + '%;background:' + subject.color + '"></div>' +
+    '</div></div>' + actionsHTML;
+
+  document.getElementById('addChapterBtn').onclick = function() { openChapterModal(); };
+  if (custom) {
+    document.getElementById('editSubjectBtn').onclick = openEditModal;
+    document.getElementById('deleteSubjectBtn').onclick = openDeleteSubject;
+  }
+
+  const allKeys = getAllKeys();
+  const allDone = allKeys.length > 0 && allKeys.every(function(k) { var v = completed[k]; return v && v !== false; });
+  const toggleBtn = document.getElementById('toggleAllBtn');
+  toggleBtn.textContent = allDone ? 'Unmark all' : 'Mark all complete';
+  toggleBtn.onclick = function() {
+    const c = getCompleted();
+    allKeys.forEach(function(k) { c[k] = allDone ? false : today(); });
+    saveCompleted(c);
+    render();
+  };
+
+  const wrap = document.getElementById('chaptersWrap');
+
+  if (!custom && subject.topics && subject.topics.length > 0) {
+    wrap.innerHTML = '<div class="chapter-block"><div class="topics-list">' +
+      subject.topics.map(function(t, i) {
+        const key   = 's' + subject.id + '_t' + t.id;
+        const isDone = !!(completed[key] && completed[key] !== false);
+        return '<div class="topic-row ' + (isDone ? 'completed' : '') + '" data-key="' + key + '">' +
+          '<div class="topic-check ' + (isDone ? 'done' : '') + '">' + (isDone ? 'v' : '') + '</div>' +
+          '<span class="topic-name">' + (i + 1) + '. ' + t.name + '</span>' +
+          '</div>';
+      }).join('') + '</div></div>';
+    wrap.querySelectorAll('.topic-row').forEach(function(row) {
+      row.addEventListener('click', function() { toggleKey(row.dataset.key); });
+    });
+    return;
+  }
+
+  if (!subject.customChapters || subject.customChapters.length === 0) {
+    wrap.innerHTML = '<div class="no-chapters">' +
+      '<div class="nc-icon">folder</div>' +
+      '<p>No chapters yet.<br/>Click <strong>+ Add Chapter</strong> above to get started,<br/>then add subtopics inside each chapter.</p>' +
+      '</div>';
+    return;
+  }
+
+  wrap.innerHTML = subject.customChapters.map(function(ch) {
+    const subs   = ch.subtopics || [];
+    const chDone = subs.filter(function(st) { const v = completed['c' + ch.id + '_st' + st.id]; return v && v !== false; }).length;
+
+    const topicsHTML = subs.length
+      ? subs.map(function(st, si) {
+          const key    = 'c' + ch.id + '_st' + st.id;
+          const isDone = !!(completed[key] && completed[key] !== false);
+          return '<div class="topic-row ' + (isDone ? 'completed' : '') + '" data-key="' + key + '">' +
+            '<div class="topic-check ' + (isDone ? 'done' : '') + '">' + (isDone ? 'v' : '') + '</div>' +
+            '<span class="topic-name">' + (si + 1) + '. ' + st.name + '</span>' +
+            '<button class="topic-del-btn" data-ch="' + ch.id + '" data-st="' + st.id + '" title="Delete subtopic">x</button>' +
+            '</div>';
+        }).join('')
+      : '<div class="chapter-empty">No subtopics yet - add one below.</div>';
+
+    return '<div class="chapter-block">' +
+      '<div class="chapter-header">' +
+      '<span class="chapter-title">' + ch.name + '</span>' +
+      '<span class="chapter-meta">' + chDone + '/' + subs.length + '</span>' +
+      '<div class="chapter-actions">' +
+      '<button class="ch-btn" data-ch-edit="' + ch.id + '">Rename</button>' +
+      '<button class="ch-btn danger" data-ch-del="' + ch.id + '">Delete</button>' +
+      '</div></div>' +
+      '<div class="topics-list">' + topicsHTML + '</div>' +
+      '<div class="add-subtopic-row">' +
+      '<input type="text" placeholder="New subtopic name..." id="stInput-' + ch.id + '"/>' +
+      '<button data-add-st="' + ch.id + '">+ Add Subtopic</button>' +
+      '</div></div>';
+  }).join('');
+
+  wrap.querySelectorAll('[data-ch-edit]').forEach(function(btn) {
+    btn.addEventListener('click', function() { openChapterModal(parseInt(btn.dataset.chEdit)); });
+  });
+  wrap.querySelectorAll('[data-ch-del]').forEach(function(btn) {
+    btn.addEventListener('click', function() { confirmDeleteChapter(parseInt(btn.dataset.chDel)); });
+  });
+  wrap.querySelectorAll('[data-add-st]').forEach(function(btn) {
+    const chId = parseInt(btn.dataset.addSt);
+    btn.addEventListener('click', function() { addSubtopic(chId); });
+    const inp = document.getElementById('stInput-' + chId);
+    if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') addSubtopic(chId); });
+  });
+  wrap.querySelectorAll('.topic-del-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      confirmDeleteSubtopic(parseInt(btn.dataset.ch), parseInt(btn.dataset.st));
+    });
+  });
+  wrap.querySelectorAll('.topic-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('.topic-del-btn')) return;
+      toggleKey(row.dataset.key);
+    });
+  });
+}
+
+function getAllKeys() {
+  const keys = [];
+  if (subject.topics) subject.topics.forEach(function(t) { keys.push('s' + subject.id + '_t' + t.id); });
+  if (subject.customChapters) subject.customChapters.forEach(function(ch) {
+    (ch.subtopics || []).forEach(function(st) { keys.push('c' + ch.id + '_st' + st.id); });
+  });
+  return keys;
+}
+
+function toggleKey(key) {
+  const c = getCompleted();
+  c[key] = (c[key] && c[key] !== false) ? false : today();
+  saveCompleted(c);
+  render();
+}
+
+function addSubtopic(chId) {
+  const input = document.getElementById('stInput-' + chId);
+  const name  = (input ? input.value : '').trim();
+  if (!name) return;
+  const ch = (subject.customChapters || []).find(function(c) { return c.id === chId; });
+  if (!ch) return;
+  if (!ch.subtopics) ch.subtopics = [];
+  ch.subtopics.push({ id: nextSubtopicId(ch), name: name });
+  persistSubject();
+  render();
+}
+
+var editingChapterId = null;
+
+function openChapterModal(chId) {
+  editingChapterId = chId !== undefined ? chId : null;
+  const ch = editingChapterId != null ? (subject.customChapters || []).find(function(c) { return c.id === editingChapterId; }) : null;
+  document.getElementById('chapterModalTitle').textContent = ch ? 'Rename Chapter' : 'Add Chapter';
+  document.getElementById('chapterName').value = ch ? ch.name : '';
+  document.getElementById('chapterModal').classList.add('open');
+  setTimeout(function() { document.getElementById('chapterName').focus(); }, 80);
+}
+function closeChapterModal() {
+  editingChapterId = null;
+  document.getElementById('chapterModal').classList.remove('open');
+}
+document.getElementById('chapterModalX').addEventListener('click', closeChapterModal);
+document.getElementById('chapterCancelBtn').addEventListener('click', closeChapterModal);
+document.getElementById('chapterName').addEventListener('keydown', function(e) { if (e.key === 'Enter') saveChapter(); });
+document.getElementById('chapterSaveBtn').addEventListener('click', saveChapter);
+
+function saveChapter() {
+  const name = document.getElementById('chapterName').value.trim();
+  if (!name) { alert('Please enter a chapter name.'); return; }
+  if (!subject.customChapters) subject.customChapters = [];
+  if (editingChapterId != null) {
+    const ch = subject.customChapters.find(function(c) { return c.id === editingChapterId; });
+    if (ch) ch.name = name;
+  } else {
+    subject.customChapters.push({ id: nextChapterId(), name: name, subtopics: [] });
+  }
+  persistSubject();
+  closeChapterModal();
+  render();
+}
+
+function confirmDeleteChapter(chId) {
+  const ch = (subject.customChapters || []).find(function(c) { return c.id === chId; });
+  if (!ch) return;
+  document.getElementById('confirmTitle').textContent = 'Delete Chapter';
+  document.getElementById('confirmText').textContent =
+    'Delete chapter "' + ch.name + '" and all ' + (ch.subtopics||[]).length + ' subtopic(s) inside it? This cannot be undone.';
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOk').onclick = function() {
+    const c = getCompleted();
+    (ch.subtopics || []).forEach(function(st) { delete c['c' + ch.id + '_st' + st.id]; });
+    saveCompleted(c);
+    subject.customChapters = subject.customChapters.filter(function(c) { return c.id !== chId; });
+    persistSubject();
+    closeConfirm();
+    render();
+  };
+}
+
+function confirmDeleteSubtopic(chId, stId) {
+  const ch = (subject.customChapters || []).find(function(c) { return c.id === chId; });
+  const st = ch ? (ch.subtopics || []).find(function(s) { return s.id === stId; }) : null;
+  if (!ch || !st) return;
+  document.getElementById('confirmTitle').textContent = 'Delete Subtopic';
+  document.getElementById('confirmText').textContent = 'Delete subtopic "' + st.name + '"? This cannot be undone.';
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOk').onclick = function() {
+    const c = getCompleted();
+    delete c['c' + chId + '_st' + stId];
+    saveCompleted(c);
+    ch.subtopics = ch.subtopics.filter(function(s) { return s.id !== stId; });
+    persistSubject();
+    closeConfirm();
+    render();
+  };
+}
+
+function openDeleteSubject() {
+  document.getElementById('confirmTitle').textContent = 'Delete Subject';
+  document.getElementById('confirmText').textContent =
+    'Delete "' + subject.name + '" and all its chapters and progress? This cannot be undone.';
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOk').onclick = function() {
+    saveCustomSubjects(getCustomSubjects().filter(function(s) { return s.id !== subject.id; }));
+    const overlays = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+    delete overlays[subject.id];
+    localStorage.setItem('cfa_subject_overlays', JSON.stringify(overlays));
+    closeConfirm();
+    window.location.href = 'subjects.html';
+  };
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+
+function openEditModal() {
+  document.getElementById('editName').value      = subject.name      || '';
+  document.getElementById('editShortName').value = subject.shortName || '';
+  document.getElementById('editIcon').value      = subject.icon      || '';
+  document.getElementById('editColor').value     = subject.color     || '#58a6ff';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+document.getElementById('editModalX').addEventListener('click', closeEditModal);
+document.getElementById('editCancelBtn').addEventListener('click', closeEditModal);
+document.getElementById('editSaveBtn').addEventListener('click', function() {
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  subject.name      = name;
+  subject.shortName = document.getElementById('editShortName').value.trim() || name;
+  const icon        = document.getElementById('editIcon').value.trim();
+  if (icon) subject.icon = icon;
+  subject.color = document.getElementById('editColor').value;
+  persistSubject();
+  closeEditModal();
+  document.getElementById('breadSubject').textContent = subject.shortName || subject.name;
+  document.title = 'Study Time Table Tracker - ' + (subject.shortName || subject.name);
+  render();
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Time Table Tracker — Sync Data</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="card fade-up">
+    <h1 style="margin-bottom:1rem">Sync Your Data</h1>
+    <p style="color:var(--text-muted);margin-bottom:2rem">Export your data to use across different browsers or devices</p>
+
+    <div style="display:flex;flex-direction:column;gap:1.5rem">
+      
+      <div style="border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+        <h3 style="margin-bottom:0.5rem">📤 Export Data</h3>
+        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">Download all your study data as a JSON file</p>
+        <button class="btn btn-primary" onclick="exportData()">Download Data</button>
+      </div>
+
+      <div style="border:1px solid var(--border);border-radius:8px;padding:1.5rem">
+        <h3 style="margin-bottom:0.5rem">📥 Import Data</h3>
+        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">Upload a previously exported JSON file to restore your data</p>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)"/>
+        <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">Upload Data</button>
+      </div>
+
+      <div style="border:1px solid var(--danger);border-radius:8px;padding:1.5rem;background:rgba(239,68,68,0.05)">
+        <h3 style="margin-bottom:0.5rem;color:var(--danger)">⚠️ Clear All Data</h3>
+        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">This will permanently delete all your study data from this browser</p>
+        <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+      </div>
+
+    </div>
+
+    <a href="index.html" class="btn btn-ghost" style="margin-top:2rem">← Back to Dashboard</a>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+function exportData() {
+  const data = {
+    studyLog: getStudyLog(),
+    dailyGoal: getDailyGoal(),
+    completed: getCompleted(),
+    customSubjects: JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]'),
+    subjectOverlays: JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}'),
+    exportDate: new Date().toISOString()
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `study-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  alert('Data exported successfully! Save this file to import on another browser.');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      if (!data.studyLog || !data.completed) {
+        alert('Invalid backup file format');
+        return;
+      }
+
+      if (!confirm('This will replace all current data. Continue?')) {
+        return;
+      }
+
+      localStorage.setItem('cfa_study_log', JSON.stringify(data.studyLog));
+      localStorage.setItem('cfa_daily_goal', data.dailyGoal || '3');
+      localStorage.setItem('cfa_completed', JSON.stringify(data.completed));
+      localStorage.setItem('cfa_custom_subjects', JSON.stringify(data.customSubjects || []));
+      localStorage.setItem('cfa_subject_overlays', JSON.stringify(data.subjectOverlays || {}));
+
+      alert('Data imported successfully!');
+      window.location.href = 'index.html';
+    } catch (err) {
+      alert('Error importing data: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('Are you sure? This will delete ALL your study data permanently!')) return;
+  if (!confirm('Last chance! This cannot be undone. Delete everything?')) return;
+
+  localStorage.removeItem('cfa_study_log');
+  localStorage.removeItem('cfa_daily_goal');
+  localStorage.removeItem('cfa_completed');
+  localStorage.removeItem('cfa_custom_subjects');
+  localStorage.removeItem('cfa_subject_overlays');
+
+  alert('All data cleared');
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>

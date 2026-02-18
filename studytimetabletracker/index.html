@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Time Table Tracker — Dashboard</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+@media(max-width:820px){ .dashboard-hero { grid-template-columns: 1fr; } }
+
+.today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.hours-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.big-input {
+  font-family: var(--mono);
+  font-size: 3rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  border-radius: 0;
+  color: var(--accent);
+  width: 120px;
+  padding: 0;
+  line-height: 1;
+}
+.big-input:focus { outline: none; border-color: var(--accent); }
+
+.streak-flame { font-size: 1.5rem; }
+
+.subjects-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
+.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; position: relative; }
+.subj-mini:hover { background: var(--surface2); }
+.subj-mini-name { font-size: 0.78rem; font-weight: 600; }
+.subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
+.delete-mini-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.65rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
+.edit-mode-mini .delete-mini-btn { display: block; }
+
+.log-controls { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 0.75rem; }
+.cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--border); font-size: 0.75rem; position: relative; background: var(--surface); cursor: pointer; transition: all 0.15s; }
+.cal-day:hover:not(.other-month) { background: var(--surface2); border-color: var(--accent); }
+.cal-day.today { border-color: var(--accent); border-width: 2px; }
+.cal-day.has-hours { background: var(--success); color: white; font-weight: 600; }
+.cal-day.other-month { opacity: 0.3; cursor: default; }
+.cal-hours { font-size: 0.65rem; margin-top: 2px; }
+.cal-header { font-weight: 600; font-size: 0.7rem; color: var(--text-muted); padding: 0.5rem 0; text-align: center; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal.open { display: flex; }
+.modal-content { background: var(--surface); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
+.modal-close:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+    <a href="sync.html">Sync</a>
+    <a href="profile.html">My Profile</a>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- ROLLOVER ALERT -->
+  <div id="rolloverBanner" class="rollover-alert delay-1 fade-up" style="display:none"></div>
+
+  <!-- HERO GRID -->
+  <div class="dashboard-hero">
+
+    <!-- TODAY'S LOG CARD -->
+    <div class="card fade-up">
+      <div class="section-header">
+        <div>
+          <p class="label">Today's Session</p>
+          <h2 id="todayDate" style="margin-top:0.25rem">—</h2>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <div id="streakBadge" class="streak-flame" title="Study streak"></div>
+          <button id="clearTodayBtn" class="btn btn-danger" style="padding:0.3rem 0.7rem;font-size:0.8rem">Clear Today</button>
+        </div>
+      </div>
+
+      <div class="hours-row">
+        <div>
+          <p class="label" style="margin-bottom:0.4rem">Hours studied</p>
+          <input id="hoursInput" class="big-input" type="number" min="0" max="24" step="0.5" placeholder="0"/>
+        </div>
+        <span style="font-size:1.5rem;color:var(--text-dim);padding-bottom:0.5rem">/</span>
+        <div>
+          <p class="label" style="margin-bottom:0.4rem">Today's target</p>
+          <input id="todayTarget" class="big-input" type="number" min="0" max="24" step="0.5" style="color:var(--text-muted);cursor:pointer" readonly />
+        </div>
+        <span style="font-size:1rem;color:var(--text-dim);padding-bottom:0.5rem">hrs</span>
+      </div>
+
+      <div>
+        <div class="progress-track" style="height:10px">
+          <div id="todayBar" class="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="log-controls">
+        <button class="btn btn-primary" id="logBtn">Log Hours</button>
+      </div>
+    </div>
+
+    <!-- SIDE STATS -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
+
+      <div class="card fade-up delay-1">
+        <p class="label">Total Hours Logged</p>
+        <p id="totalHours" class="stat-value" style="margin-top:0.5rem;color:var(--accent)">0h</p>
+        <p id="totalDays" class="stat-sub">across 0 sessions</p>
+      </div>
+
+      <div class="card fade-up delay-2">
+        <p class="label">Rollover Balance</p>
+        <p id="rolloverHours" class="stat-value" style="margin-top:0.5rem">—</p>
+        <p id="rolloverDesc" class="stat-sub">—</p>
+      </div>
+
+      <div class="card fade-up delay-3" style="cursor:pointer" onclick="window.location.href='completed.html'">
+        <p class="label">Topics Completed</p>
+        <p id="topicsDone" class="stat-value" style="margin-top:0.5rem;color:var(--success)">0</p>
+        <p id="topicsTotal" class="stat-sub">of 0 total topics · Click to view</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="card fade-up delay-2" style="margin-bottom:1.5rem">
+    <div class="section-header">
+      <div>
+        <p class="label">Study Activity</p>
+        <h3 style="margin-top:0.2rem">Last 90 days</h3>
+      </div>
+    </div>
+    <div id="heatmap" class="heatmap"></div>
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.75rem">
+      <span style="font-size:0.7rem;color:var(--text-dim)">Less</span>
+      <div class="heat-cell heat-0"></div>
+      <div class="heat-cell heat-1"></div>
+      <div class="heat-cell heat-2"></div>
+      <div class="heat-cell heat-3"></div>
+      <div class="heat-cell heat-4"></div>
+      <span style="font-size:0.7rem;color:var(--text-dim)">More</span>
+    </div>
+  </div>
+
+  <!-- SUBJECTS + LOG GRID -->
+  <div class="grid-2">
+
+    <!-- SUBJECT PROGRESS -->
+    <div class="card fade-up delay-3">
+      <div class="section-header">
+        <p class="label">Subject Progress</p>
+        <div style="display:flex;gap:0.5rem">
+          <button id="editModeMiniBtn" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.75rem">Edit</button>
+          <a href="subjects.html" class="btn btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.8rem">View All →</a>
+        </div>
+      </div>
+      <div id="subjectsMini" class="subjects-grid"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="card fade-up delay-4">
+      <div class="section-header">
+        <p class="label">Study Calendar</p>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <button id="prevMonth" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.8rem">←</button>
+          <span id="calendarMonth" style="font-size:0.85rem;font-weight:600;min-width:120px;text-align:center"></span>
+          <button id="nextMonth" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.8rem">→</button>
+        </div>
+      </div>
+      <div id="calendar"></div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+let DATA = { subjects: [] };
+let currentCalendarMonth = new Date();
+currentCalendarMonth.setDate(1); // Start at Feb 1, 2025
+
+async function init() {
+  DATA = await loadData();
+  renderAll();
+}
+
+function renderAll() {
+  const todayStr = today();
+  const goal = getDailyGoal();
+  const log = getStudyLog();
+  const hoursToday = getHoursForDate(todayStr);
+  const target = getTodayTarget();
+
+  // Date
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  // Inputs
+  document.getElementById('hoursInput').value = hoursToday || '';
+  document.getElementById('todayTarget').value = target.toFixed(1);
+
+  // Progress bar
+  const pct = target > 0 ? Math.min((hoursToday / target) * 100, 100) : 100;
+  const bar = document.getElementById('todayBar');
+  bar.style.width = pct + '%';
+  bar.className = 'progress-fill ' + (pct >= 100 ? 'success' : pct >= 60 ? '' : 'danger');
+
+  // Rollover
+  const rollover = target - goal; // positive = behind (deficit), negative = ahead (surplus)
+  const ro = document.getElementById('rolloverHours');
+  const roDesc = document.getElementById('rolloverDesc');
+  const banner = document.getElementById('rolloverBanner');
+  
+  if (rollover > 0.05) {
+    // Behind schedule - have deficit
+    ro.textContent = '+' + rollover.toFixed(1) + 'h';
+    ro.style.color = 'var(--warning)';
+    roDesc.textContent = 'deficit from past sessions';
+    banner.style.display = 'flex';
+    banner.className = 'rollover-alert delay-1 fade-up';
+    banner.innerHTML = `⚠️ <div><strong>${rollover.toFixed(1)} hours rolled over</strong> from previous sessions. Today's target is <strong>${target.toFixed(1)}h</strong> instead of ${goal}h.</div>`;
+  } else if (rollover < -0.05) {
+    // Ahead of schedule - have surplus
+    ro.textContent = rollover.toFixed(1) + 'h';
+    ro.style.color = 'var(--success)';
+    roDesc.textContent = 'surplus — you\'re ahead of schedule';
+    banner.style.display = 'flex';
+    banner.className = 'rollover-alert good delay-1 fade-up';
+    banner.innerHTML = `✅ <div><strong>You're ${Math.abs(rollover).toFixed(1)}h ahead!</strong> Today's target is reduced to <strong>${target.toFixed(1)}h</strong>.</div>`;
+  } else {
+    // On track
+    ro.textContent = '0h';
+    ro.style.color = 'var(--text-muted)';
+    roDesc.textContent = 'on track — no deficit or surplus';
+    banner.style.display = 'none';
+  }
+
+  // Totals
+  const totalH = log.reduce((s, l) => s + l.hours, 0);
+  document.getElementById('totalHours').textContent = totalH.toFixed(1) + 'h';
+  document.getElementById('totalDays').textContent = `across ${log.length} session${log.length !== 1 ? 's' : ''}`;
+
+  // Topics
+  const completed = getCompleted();
+  const totalTopics = DATA.subjects.reduce((s, sub) => s + countSubtopics(sub), 0);
+  const doneTopics = DATA.subjects.reduce((s, sub) => s + countCompletedSubtopics(sub, completed), 0);
+  document.getElementById('topicsDone').textContent = doneTopics;
+  document.getElementById('topicsTotal').textContent = `of ${totalTopics} total topics`;
+
+  // Streak
+  let streak = 0;
+  const g = getDailyGoal();
+  const d = new Date();
+  while(true) {
+    const ds = d.toISOString().split('T')[0];
+    const h = getHoursForDate(ds);
+    if (h >= g) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  document.getElementById('streakBadge').textContent = streak > 1 ? `🔥 ${streak} day streak` : '';
+
+  // Heatmap
+  buildHeatmap('heatmap', log, goal);
+
+  // Subjects mini
+  renderSubjectsMini(completed, DATA.subjects);
+
+  // Calendar
+  renderCalendar(log);
+}
+
+function renderSubjectsMini(completed, subjects) {
+  const el = document.getElementById('subjectsMini');
+  el.innerHTML = subjects.map(s => {
+    const total = countSubtopics(s);
+    const done = countCompletedSubtopics(s, completed);
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const deleteBtn = s.custom ? `<button class="delete-mini-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
+    return `<a href="subject.html?id=${s.id}" class="subj-mini">
+      ${deleteBtn}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="subj-mini-name">${s.icon} ${s.shortName}</span>
+        <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+function renderLog(log) {
+  const el = document.getElementById('logList');
+  const recent = [...log].reverse().slice(0, 10);
+  if (!recent.length) {
+    el.innerHTML = '<p style="color:var(--text-dim);font-size:0.875rem;padding:1rem 0">No sessions logged yet. Start studying!</p>';
+    return;
+  }
+  el.innerHTML = recent.map(l => `
+    <div class="log-item">
+      <span class="log-date">${l.date}</span>
+      <span class="log-hours" style="color:${l.hours >= getDailyGoal() ? 'var(--success)' : 'var(--warning)'}">${l.hours}h</span>
+    </div>`).join('');
+}
+
+function renderCalendar(log) {
+  const year = currentCalendarMonth.getFullYear();
+  const month = currentCalendarMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const todayStr = today();
+  
+  document.getElementById('calendarMonth').textContent = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  
+  let html = '<div class="calendar">';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+    html += `<div class="cal-header">${d}</div>`;
+  });
+  
+  // Previous month days
+  const prevMonthDays = new Date(year, month, 0).getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month">${prevMonthDays - i}</div>`;
+  }
+  
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const entry = log.find(l => l.date === dateStr);
+    const hours = entry ? entry.hours : 0;
+    const isToday = dateStr === todayStr;
+    const classes = ['cal-day'];
+    if (isToday) classes.push('today');
+    if (hours > 0) classes.push('has-hours');
+    
+    html += `<div class="${classes.join(' ')}" onclick="window.location.href='date.html?date=${dateStr}'">
+      <div>${day}</div>
+      ${hours > 0 ? `<div class="cal-hours">${hours}h</div>` : ''}
+    </div>`;
+  }
+  
+  // Next month days
+  const totalCells = startDay + daysInMonth;
+  const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i = 1; i <= remainingCells; i++) {
+    html += `<div class="cal-day other-month">${i}</div>`;
+  }
+  
+  html += '</div>';
+  document.getElementById('calendar').innerHTML = html;
+}
+
+
+
+function updateTodayTarget(value) {
+  const newTarget = parseFloat(value);
+  if (isNaN(newTarget) || newTarget < 0) {
+    renderAll();
+    return;
+  }
+  const goal = getDailyGoal();
+  const currentTarget = getTodayTarget();
+  const adjustment = newTarget - currentTarget;
+  
+  // Adjust today's logged hours to match the new target
+  const todayStr = today();
+  const currentHours = getHoursForDate(todayStr);
+  const log = getStudyLog();
+  
+  // Find all past dates and adjust the most recent one
+  const pastDates = log.filter(l => l.date < todayStr).sort((a,b) => b.date.localeCompare(a.date));
+  if (pastDates.length > 0) {
+    const lastDate = pastDates[0];
+    lastDate.hours = Math.max(0, lastDate.hours - adjustment);
+    saveStudyLog(log);
+  }
+  
+  renderAll();
+  document.getElementById('todayTarget').readOnly = true;
+}
+
+// Event listeners
+document.getElementById('logBtn').addEventListener('click', () => {
+  const h = parseFloat(document.getElementById('hoursInput').value);
+  if (isNaN(h) || h < 0) return;
+  logHoursForDate(today(), h);
+  renderAll();
+});
+
+document.getElementById('clearTodayBtn').addEventListener('click', () => {
+  const log = getStudyLog().filter(l => l.date !== today());
+  saveStudyLog(log);
+  document.getElementById('hoursInput').value = '';
+  renderAll();
+});
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() - 1);
+  renderCalendar(getStudyLog());
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + 1);
+  renderCalendar(getStudyLog());
+});
+
+let editModeMini = false;
+function toggleEditModeMini() {
+  editModeMini = !editModeMini;
+  const grid = document.getElementById('subjectsMini');
+  const btn = document.getElementById('editModeMiniBtn');
+  if (editModeMini) { grid.classList.add('edit-mode-mini'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  else { grid.classList.remove('edit-mode-mini'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+}
+
+function deleteSubject(subjectId) {
+  if (!confirm('Delete this subject?')) return;
+  let cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  cs = cs.filter(s => s.id !== subjectId);
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
+  const co = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  delete co[subjectId];
+  localStorage.setItem('cfa_subject_overlays', JSON.stringify(co));
+  location.reload();
+}
+
+document.getElementById('editModeMiniBtn').addEventListener('click', toggleEditModeMini);
+
+init();
+</script>
+</body>
+</html>

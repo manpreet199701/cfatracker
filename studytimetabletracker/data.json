@@ -1,0 +1,84 @@
+{
+  "subjects": [
+    {
+      "id": 1,
+      "name": "Ethical and Professional Standards",
+      "shortName": "Ethics",
+      "color": "#E63946",
+      "icon": "⚖️",
+      "topics": []
+    },
+    {
+      "id": 2,
+      "name": "Quantitative Methods",
+      "shortName": "Quant",
+      "color": "#2196F3",
+      "icon": "📐",
+      "topics": []
+    },
+    {
+      "id": 3,
+      "name": "Economics",
+      "shortName": "Economics",
+      "color": "#4CAF50",
+      "icon": "📈",
+      "topics": []
+    },
+    {
+      "id": 4,
+      "name": "Financial Statement Analysis",
+      "shortName": "FSA",
+      "color": "#FF9800",
+      "icon": "📊",
+      "topics": []
+    },
+    {
+      "id": 5,
+      "name": "Corporate Issuers",
+      "shortName": "Corporate",
+      "color": "#9C27B0",
+      "icon": "🏢",
+      "topics": []
+    },
+    {
+      "id": 6,
+      "name": "Equity Investments",
+      "shortName": "Equity",
+      "color": "#00BCD4",
+      "icon": "📉",
+      "topics": []
+    },
+    {
+      "id": 7,
+      "name": "Fixed Income",
+      "shortName": "Fixed Income",
+      "color": "#3F51B5",
+      "icon": "💵",
+      "topics": []
+    },
+    {
+      "id": 8,
+      "name": "Derivatives",
+      "shortName": "Derivatives",
+      "color": "#FF5722",
+      "icon": "🔁",
+      "topics": []
+    },
+    {
+      "id": 9,
+      "name": "Alternative Investments",
+      "shortName": "Alternatives",
+      "color": "#009688",
+      "icon": "🏛️",
+      "topics": []
+    },
+    {
+      "id": 10,
+      "name": "Portfolio Management",
+      "shortName": "Portfolio",
+      "color": "#FFC107",
+      "icon": "💼",
+      "topics": []
+    }
+  ]
+}
