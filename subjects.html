@@ -242,6 +242,7 @@
 </div>
 
 <script src="app.js"></script>
+<script type="module" src="firebase-sync.js"></script>
 <script>
 setActiveNav();
 
@@ -386,6 +387,7 @@ document.getElementById('editSaveBtn').addEventListener('click', () => {
     if (icon)  custom[idx].icon  = icon;
     custom[idx].color = color;
     localStorage.setItem('cfa_custom_subjects', JSON.stringify(custom));
+    queueSync('custom-subjects');
   }
   closeEdit();
   init();
@@ -413,11 +415,13 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
   let custom = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
   custom = custom.filter(s => s.id !== deletingSubjectId);
   localStorage.setItem('cfa_custom_subjects', JSON.stringify(custom));
+  queueSync('custom-subjects');
 
   // Remove subject overlay
   const overlays = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   delete overlays[deletingSubjectId];
   localStorage.setItem('cfa_subject_overlays', JSON.stringify(overlays));
+  queueSync('subject-overlays');
 
   deletingSubjectId = null;
   document.getElementById('confirmModal').classList.remove('open');
