@@ -138,9 +138,13 @@ document.getElementById('googleSignIn').addEventListener('click', async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
+    const defaultName = user.displayName || (user.email ? user.email.split('@')[0] : '');
+    const enteredName = window.prompt('What name should appear on your profile?', defaultName);
+    const finalName = enteredName && enteredName.trim() ? enteredName.trim() : (defaultName || 'Student');
+
     localStorage.setItem('user_id', user.uid);
-    localStorage.setItem('user_email', user.email);
-    localStorage.setItem('user_name', user.displayName);
+    localStorage.setItem('user_email', user.email || '');
+    localStorage.setItem('user_name', finalName);
 
     // Load cloud data if exists
     const docRef = doc(db, 'users', user.uid);
