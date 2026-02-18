@@ -44,10 +44,12 @@
 .streak-flame { font-size: 1.5rem; }
 
 .subjects-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
-.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; }
+.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; position: relative; }
 .subj-mini:hover { background: var(--surface2); }
 .subj-mini-name { font-size: 0.78rem; font-weight: 600; }
 .subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
+.delete-mini-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.65rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
+.edit-mode-mini .delete-mini-btn { display: block; }
 
 .log-controls { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
 
@@ -175,7 +177,10 @@
     <div class="card fade-up delay-3">
       <div class="section-header">
         <p class="label">Subject Progress</p>
-        <a href="subjects.html" class="btn btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.8rem">View All →</a>
+        <div style="display:flex;gap:0.5rem">
+          <button id="editModeMiniBtn" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.75rem">Edit</button>
+          <a href="subjects.html" class="btn btn-ghost" style="padding:0.3rem 0.7rem;font-size:0.8rem">View All →</a>
+        </div>
       </div>
       <div id="subjectsMini" class="subjects-grid"></div>
     </div>
@@ -296,7 +301,9 @@ function renderSubjectsMini(completed, subjects) {
     const total = countSubtopics(s);
     const done = countCompletedSubtopics(s, completed);
     const pct = total ? Math.round(done / total * 100) : 0;
+    const deleteBtn = s.custom ? `<button class="delete-mini-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
     return `<a href="subject.html?id=${s.id}" class="subj-mini">
+      ${deleteBtn}
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span class="subj-mini-name">${s.icon} ${s.shortName}</span>
         <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
@@ -424,6 +431,28 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + 1);
   renderCalendar(getStudyLog());
 });
+
+let editModeMini = false;
+function toggleEditModeMini() {
+  editModeMini = !editModeMini;
+  const grid = document.getElementById('subjectsMini');
+  const btn = document.getElementById('editModeMiniBtn');
+  if (editModeMini) { grid.classList.add('edit-mode-mini'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  else { grid.classList.remove('edit-mode-mini'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+}
+
+function deleteSubject(subjectId) {
+  if (!confirm('Delete this subject?')) return;
+  let cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  cs = cs.filter(s => s.id !== subjectId);
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
+  const co = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  delete co[subjectId];
+  localStorage.setItem('cfa_subject_overlays', JSON.stringify(co));
+  location.reload();
+}
+
+document.getElementById('editModeMiniBtn').addEventListener('click', toggleEditModeMini);
 
 init();
 </script>
