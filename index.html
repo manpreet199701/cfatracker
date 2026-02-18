@@ -278,8 +278,8 @@ function renderAll() {
 
   // Topics
   const completed = getCompleted();
-  const totalTopics = DATA.subjects.reduce((s, sub) => s + sub.topics.length, 0);
-  const doneTopics = Object.values(completed).filter(Boolean).length;
+  const totalTopics = DATA.subjects.reduce((s, sub) => s + countSubtopics(sub), 0);
+  const doneTopics = DATA.subjects.reduce((s, sub) => s + countCompletedSubtopics(sub, completed), 0);
   document.getElementById('topicsDone').textContent = doneTopics;
   document.getElementById('topicsTotal').textContent = `of ${totalTopics} total topics`;
 
@@ -308,8 +308,9 @@ function renderAll() {
 function renderSubjectsMini(completed, subjects) {
   const el = document.getElementById('subjectsMini');
   el.innerHTML = subjects.map(s => {
-    const done = s.topics.filter(t => completed[`s${s.id}_t${t.id}`]).length;
-    const pct = s.topics.length ? Math.round(done / s.topics.length * 100) : 0;
+    const total = countSubtopics(s);
+    const done = countCompletedSubtopics(s, completed);
+    const pct = total ? Math.round(done / total * 100) : 0;
     return `<a href="subject.html?id=${s.id}" class="subj-mini">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span class="subj-mini-name">${s.icon} ${s.shortName}</span>
