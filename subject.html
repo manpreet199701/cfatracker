@@ -38,6 +38,7 @@
   border: 1px solid var(--border);
   transition: all 0.15s;
   cursor: pointer;
+  position: relative;
 }
 .topic-row.chapter {
   background: var(--surface2);
@@ -52,6 +53,22 @@
 .topic-row:hover:not(.chapter) { background: var(--surface2); border-color: #444C56; }
 .topic-row.completed { opacity: 0.55; }
 .topic-row.completed .topic-name { text-decoration: line-through; color: var(--text-muted); }
+
+.delete-btn {
+  position: absolute;
+  right: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.topic-row:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { background: #c53030; }
 
 .topic-check {
   width: 22px;
@@ -289,13 +306,22 @@ function render(subject) {
       html += `<div class="topic-row chapter fade-up" style="animation-delay:${0.05 * i + 0.25}s">
         <span class="topic-name">📖 ${chapter.name}</span>
         <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn">📖 Open →</a>
+        <button class="delete-btn" onclick="deleteChapter(${chapter.id}); event.stopPropagation();">Delete</button>
       </div>`;
       
       if (chapter.subtopics && chapter.subtopics.length > 0) {
         chapter.subtopics.forEach(subtopic => {
-          html += `<div class="topic-row subtopic fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+          const subtopicKey = `c${chapter.id}_st${subtopic.id}`;
+          const isSubtopicDone = !!completed[subtopicKey];
+          const subtopicCompletedClass = isSubtopicDone ? 'completed' : '';
+          
+          html += `<div class="topic-row subtopic ${subtopicCompletedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-chapter="${chapter.id}" data-subtopic="${subtopic.id}">
+            <div class="topic-check ${isSubtopicDone ? 'done' : ''}">
+              ${isSubtopicDone ? '✓' : ''}
+            </div>
             <span class="topic-name">• ${subtopic.name}</span>
             <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn">📖 Open →</a>
+            <button class="delete-btn" onclick="deleteSubtopic(${chapter.id}, ${subtopic.id}); event.stopPropagation();">Delete</button>
           </div>`;
         });
       }
@@ -307,11 +333,23 @@ function render(subject) {
   // Click to toggle completion
   list.querySelectorAll('.topic-row:not(.chapter)').forEach(row => {
     row.addEventListener('click', (e) => {
-      // Don't toggle when clicking the link
-      if (e.target.closest('.topic-link-btn')) return;
-      const sid = parseInt(row.dataset.sid);
-      const tid = parseInt(row.dataset.tid);
-      toggleCompleted(sid, tid);
+      // Don't toggle when clicking the link or delete button
+      if (e.target.closest('.topic-link-btn') || e.target.closest('.delete-btn')) return;
+      
+      if (row.dataset.sid && row.dataset.tid) {
+        // Regular topic
+        const sid = parseInt(row.dataset.sid);
+        const tid = parseInt(row.dataset.tid);
+        toggleCompleted(sid, tid);
+      } else if (row.dataset.chapter && row.dataset.subtopic) {
+        // Subtopic
+        const chapterId = parseInt(row.dataset.chapter);
+        const subtopicId = parseInt(row.dataset.subtopic);
+        const completed = getCompleted();
+        const key = `c${chapterId}_st${subtopicId}`;
+        completed[key] = !completed[key];
+        saveCompleted(completed);
+      }
       render(subject);
     });
   });
@@ -414,21 +452,29 @@ function openAddTopicModal() {
 
 function closeAddTopicModal() {
   document.getElementById('addTopicModal').classList.remove('open');
-  document.getElementById('newTopicName').value = '';
+  document.getElementById('newTopicsInput').value = '';
   document.getElementById('chapterSelect').value = '';
 }
 
-function saveNewTopic() {
-  const name = document.getElementById('newTopicName').value.trim();
+function saveNewTopics() {
+  const topicsText = document.getElementById('newTopicsInput').value.trim();
   const parentId = parseInt(document.getElementById('chapterSelect').value);
   
-  if (!name) {
-    alert('Please enter a sub-topic name');
+  if (!topicsText) {
+    alert('Please enter at least one sub-topic name');
     return;
   }
   
   if (!parentId) {
     alert('Please select a chapter');
+    return;
+  }
+  
+  // Split by newlines and filter empty lines
+  const topicNames = topicsText.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+  
+  if (topicNames.length === 0) {
+    alert('Please enter at least one sub-topic name');
     return;
   }
   
@@ -440,11 +486,13 @@ function saveNewTopic() {
     const chapter = customSubject.topics.find(t => t.id === parentId);
     if (chapter) {
       if (!chapter.subtopics) chapter.subtopics = [];
-      const newSubtopicId = Date.now();
-      chapter.subtopics.push({
-        id: newSubtopicId,
-        name: name,
-        parentId: parentId
+      topicNames.forEach(name => {
+        const newSubtopicId = Date.now() + Math.random();
+        chapter.subtopics.push({
+          id: newSubtopicId,
+          name: name,
+          parentId: parentId
+        });
       });
       localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
     }
@@ -453,17 +501,66 @@ function saveNewTopic() {
     const chapter = customOverlay[subjectId].chapters.find(c => c.id === parentId);
     if (chapter) {
       if (!chapter.subtopics) chapter.subtopics = [];
-      const newSubtopicId = Date.now();
-      chapter.subtopics.push({
-        id: newSubtopicId,
-        name: name,
-        parentId: parentId
+      topicNames.forEach(name => {
+        const newSubtopicId = Date.now() + Math.random();
+        chapter.subtopics.push({
+          id: newSubtopicId,
+          name: name,
+          parentId: parentId
+        });
       });
       localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
     }
   }
   
   closeAddTopicModal();
+  location.reload();
+}
+
+function deleteChapter(chapterId) {
+  if (!confirm('Delete this chapter and all its sub-topics?')) return;
+  
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const customSubject = customSubjects.find(s => s.id === subjectId);
+  
+  if (customSubject) {
+    customSubject.topics = customSubject.topics.filter(t => t.id !== chapterId);
+    localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+  } else if (customOverlay[subjectId]) {
+    customOverlay[subjectId].chapters = customOverlay[subjectId].chapters.filter(c => c.id !== chapterId);
+    localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
+  }
+  
+  location.reload();
+}
+
+function deleteSubtopic(chapterId, subtopicId) {
+  if (!confirm('Delete this sub-topic?')) return;
+  
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const customSubject = customSubjects.find(s => s.id === subjectId);
+  
+  if (customSubject) {
+    const chapter = customSubject.topics.find(t => t.id === chapterId);
+    if (chapter && chapter.subtopics) {
+      chapter.subtopics = chapter.subtopics.filter(st => st.id !== subtopicId);
+      localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+    }
+  } else if (customOverlay[subjectId]) {
+    const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
+    if (chapter && chapter.subtopics) {
+      chapter.subtopics = chapter.subtopics.filter(st => st.id !== subtopicId);
+      localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
+    }
+  }
+  
+  // Also remove completion status
+  const completed = getCompleted();
+  delete completed[`c${chapterId}_st${subtopicId}`];
+  saveCompleted(completed);
+  
   location.reload();
 }
 
