@@ -205,6 +205,7 @@
 
 
 <script src="app.js"></script>
+<script type="module" src="firebase-sync.js"></script>
 <script>
 setActiveNav();
 
@@ -452,6 +453,7 @@ function deleteSubject(subjectId) {
   const co = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   delete co[subjectId];
   localStorage.setItem('cfa_subject_overlays', JSON.stringify(co));
+  queueSync('custom-subjects');
   location.reload();
 }
 
