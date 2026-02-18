@@ -154,9 +154,9 @@
 
 <!-- ADD TOPIC MODAL -->
 <div id="addTopicModal" class="modal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width:500px">
     <div class="modal-header">
-      <h3 style="margin:0">Add Sub-topic</h3>
+      <h3 style="margin:0">Add Sub-topics</h3>
       <button class="modal-close" onclick="closeAddTopicModal()">&times;</button>
     </div>
     <div class="input-group">
@@ -166,11 +166,11 @@
       </select>
     </div>
     <div class="input-group">
-      <label>Sub-topic Name</label>
-      <input id="newTopicName" type="text" placeholder="Enter sub-topic name"/>
+      <label>Sub-topics (one per line)</label>
+      <textarea id="newTopicsInput" rows="6" placeholder="Enter sub-topic names, one per line&#10;Example:&#10;Introduction to concepts&#10;Basic principles&#10;Advanced topics" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);resize:vertical"></textarea>
     </div>
     <div style="display:flex;gap:0.75rem;margin-top:1rem">
-      <button class="btn btn-primary" onclick="saveNewTopic()">Add Sub-topic</button>
+      <button class="btn btn-primary" onclick="saveNewTopics()">Add Sub-topics</button>
       <button class="btn btn-ghost" onclick="closeAddTopicModal()">Cancel</button>
     </div>
   </div>
