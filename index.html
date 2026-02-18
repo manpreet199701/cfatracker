@@ -423,6 +423,33 @@ function deleteDateHours() {
   renderAll();
 }
 
+function updateTodayTarget(value) {
+  const newTarget = parseFloat(value);
+  if (isNaN(newTarget) || newTarget < 0) {
+    renderAll();
+    return;
+  }
+  const goal = getDailyGoal();
+  const currentTarget = getTodayTarget();
+  const adjustment = newTarget - currentTarget;
+  
+  // Adjust today's logged hours to match the new target
+  const todayStr = today();
+  const currentHours = getHoursForDate(todayStr);
+  const log = getStudyLog();
+  
+  // Find all past dates and adjust the most recent one
+  const pastDates = log.filter(l => l.date < todayStr).sort((a,b) => b.date.localeCompare(a.date));
+  if (pastDates.length > 0) {
+    const lastDate = pastDates[0];
+    lastDate.hours = Math.max(0, lastDate.hours - adjustment);
+    saveStudyLog(log);
+  }
+  
+  renderAll();
+  document.getElementById('todayTarget').readOnly = true;
+}
+
 // Event listeners
 document.getElementById('logBtn').addEventListener('click', () => {
   const h = parseFloat(document.getElementById('hoursInput').value);
