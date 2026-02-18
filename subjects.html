@@ -6,84 +6,34 @@
 <title>Study Time Table Tracker — Subjects</title>
 <link rel="stylesheet" href="style.css"/>
 <style>
-.subjects-page-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.25rem;
-  position: relative;
-}
-
-.subject-card-full {
-  text-decoration: none;
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s, border-color 0.2s;
-}
+.subjects-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
+.subject-card-full { text-decoration: none; color: var(--text); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; transition: transform 0.2s; }
 .subject-card-full:hover { transform: translateY(-3px); }
-
-.delete-subject-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.7rem;
-  background: var(--danger);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: none;
-  z-index: 10;
-}
+.delete-subject-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.7rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
 .edit-mode .delete-subject-btn { display: block; }
-.delete-subject-btn:hover { background: #c53030; }
-
-.subject-card-full .top-bar {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 4px;
-  border-radius: 12px 12px 0 0;
-}
-
+.subject-card-full .top-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 12px 12px 0 0; }
 .subject-card-full .card-body { padding-top: 0.5rem; }
 .subject-card-full .big-icon { font-size: 2.5rem; margin-bottom: 0.25rem; }
 .subject-card-full .sub-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
 .subject-card-full .sub-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
 .subject-card-full .sub-pct { font-family: var(--mono); font-weight: 600; font-size: 1rem; }
 .subject-card-full .topic-count { font-size: 0.78rem; color: var(--text-muted); }
-
-.overall-bar { max-width: 600px; }
-
-.summary-strip {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
+.summary-strip { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; }
 .summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
 .summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
-
-/* Mini subject progress (same as dashboard) */
-.subjects-mini-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin-bottom: 2rem; }
+.subjects-mini-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
 .subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; }
 .subj-mini:hover { background: var(--surface2); }
 .subj-mini-name { font-size: 0.78rem; font-weight: 600; }
 .subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
-
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
 .modal.open { display: flex; }
 .modal-content { background: var(--surface); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
-.modal-close:hover { color: var(--text); }
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
   <div class="nav-links">
@@ -93,7 +43,6 @@
     <a href="#" id="authLink">Login</a>
   </div>
 </nav>
-
 <div class="page">
   <div class="fade-up">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
@@ -107,23 +56,14 @@
       </div>
     </div>
   </div>
-
-  <!-- SUMMARY STRIP -->
   <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
-
-  <!-- SUBJECT PROGRESS (same mini cards as dashboard) -->
   <div class="card fade-up delay-2" style="margin-bottom:1.5rem">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <p class="label" style="margin:0">Subject Progress Overview</p>
-    </div>
+    <p class="label" style="margin-bottom:1rem">Subject Progress Overview</p>
     <div id="subjectsMiniGrid" class="subjects-mini-grid"></div>
   </div>
-
-  <!-- FULL SUBJECT CARDS GRID -->
   <div id="subjectsGrid" class="subjects-page-grid"></div>
 </div>
 
-<!-- ADD SUBJECT MODAL -->
 <div id="addSubjectModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -156,37 +96,19 @@
 <script src="app.js"></script>
 <script>
 setActiveNav();
-
 async function init() {
   const data = await loadData();
   const completed = getCompleted();
   const subjects = data.subjects;
-
   const totalTopics = subjects.reduce((s, sub) => s + countSubtopics(sub), 0);
   const doneTopics = subjects.reduce((s, sub) => s + countCompletedSubtopics(sub, completed), 0);
   const overallPct = totalTopics ? Math.round(doneTopics / totalTopics * 100) : 0;
-
-  // Summary strip
   document.getElementById('summaryStrip').innerHTML = `
-    <div class="summary-stat">
-      <div class="val" style="color:var(--accent)">${doneTopics}</div>
-      <div class="lbl">Topics Completed</div>
-    </div>
-    <div class="summary-stat">
-      <div class="val" style="color:var(--text-muted)">${totalTopics - doneTopics}</div>
-      <div class="lbl">Topics Remaining</div>
-    </div>
-    <div class="summary-stat">
-      <div class="val" style="color:var(--success)">${overallPct}%</div>
-      <div class="lbl">Overall Progress</div>
-    </div>
-    <div class="summary-stat">
-      <div class="val">${subjects.length}</div>
-      <div class="lbl">Subjects</div>
-    </div>
+    <div class="summary-stat"><div class="val" style="color:var(--accent)">${doneTopics}</div><div class="lbl">Topics Completed</div></div>
+    <div class="summary-stat"><div class="val" style="color:var(--text-muted)">${totalTopics - doneTopics}</div><div class="lbl">Topics Remaining</div></div>
+    <div class="summary-stat"><div class="val" style="color:var(--success)">${overallPct}%</div><div class="lbl">Overall Progress</div></div>
+    <div class="summary-stat"><div class="val">${subjects.length}</div><div class="lbl">Subjects</div></div>
   `;
-
-  // Mini subject progress grid (same as dashboard)
   document.getElementById('subjectsMiniGrid').innerHTML = subjects.map(s => {
     const total = countSubtopics(s);
     const done = countCompletedSubtopics(s, completed);
@@ -196,21 +118,16 @@ async function init() {
         <span class="subj-mini-name">${s.icon} ${s.shortName || s.name}</span>
         <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
-      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${s.color}"></div></div>
     </a>`;
   }).join('');
-
-  // Full subject cards
-  const grid = document.getElementById('subjectsGrid');
-  grid.innerHTML = subjects.map((s, i) => {
+  document.getElementById('subjectsGrid').innerHTML = subjects.map((s, i) => {
     const total = countSubtopics(s);
     const done = countCompletedSubtopics(s, completed);
     const pct = total ? Math.round(done / total * 100) : 0;
     const delay = Math.min(i * 0.05, 0.5);
     const deleteBtn = s.custom ? `<button class="delete-subject-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
-    return `<a href="subject.html?id=${s.id}" class="card subject-card-full fade-up" style="animation-delay:${delay + 0.2}s">
+    return `<a href="subject.html?id=${s.id}" class="card subject-card-full fade-up" style="animation-delay:${delay+0.2}s">
       <div class="top-bar" style="background:${s.color}"></div>
       ${deleteBtn}
       <div class="card-body">
@@ -227,94 +144,44 @@ async function init() {
     </a>`;
   }).join('');
 }
-
-// ── EDIT MODE ──
 let editMode = false;
-
 function toggleEditMode() {
   editMode = !editMode;
   const grid = document.getElementById('subjectsGrid');
   const btn = document.getElementById('editModeBtn');
-  if (editMode) {
-    grid.classList.add('edit-mode');
-    btn.textContent = 'Done';
-    btn.classList.remove('btn-ghost');
-    btn.classList.add('btn-primary');
-  } else {
-    grid.classList.remove('edit-mode');
-    btn.textContent = 'Edit';
-    btn.classList.remove('btn-primary');
-    btn.classList.add('btn-ghost');
-  }
+  if (editMode) { grid.classList.add('edit-mode'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  else { grid.classList.remove('edit-mode'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
 }
-
-// ── DELETE SUBJECT ──
 function deleteSubject(subjectId) {
-  if (!confirm('Delete this subject and all its chapters/topics?')) return;
-  let customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  customSubjects = customSubjects.filter(s => s.id !== subjectId);
-  localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  delete customOverlay[subjectId];
-  localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
+  if (!confirm('Delete this subject?')) return;
+  let cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  cs = cs.filter(s => s.id !== subjectId);
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
+  const co = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  delete co[subjectId];
+  localStorage.setItem('cfa_subject_overlays', JSON.stringify(co));
   location.reload();
 }
-
-// ── ADD SUBJECT MODAL ──
 function openAddSubjectModal() {
-  document.getElementById('addSubjectModal').classList.add('open');
-  // Clear fields
   document.getElementById('newSubjectName').value = '';
   document.getElementById('newSubjectShort').value = '';
   document.getElementById('newSubjectIcon').value = '';
   document.getElementById('newSubjectColor').value = '#9C27B0';
+  document.getElementById('addSubjectModal').classList.add('open');
 }
-
-function closeAddSubjectModal() {
-  document.getElementById('addSubjectModal').classList.remove('open');
-}
-
+function closeAddSubjectModal() { document.getElementById('addSubjectModal').classList.remove('open'); }
 function saveNewSubject() {
   const name = document.getElementById('newSubjectName').value.trim();
-  const shortName = document.getElementById('newSubjectShort').value.trim();
-  const icon = document.getElementById('newSubjectIcon').value.trim();
-  const color = document.getElementById('newSubjectColor').value;
-
-  if (!name) {
-    alert('Please enter a subject name.');
-    return;
-  }
-
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-
-  // Generate a unique ID (use timestamp to avoid collisions)
-  const newId = Date.now();
-
-  const newSubject = {
-    id: newId,
-    name: name,
-    shortName: shortName || name,
-    icon: icon || '📚',
-    color: color,
-    custom: true,
-    topics: []
-  };
-
-  customSubjects.push(newSubject);
-  localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-
+  if (!name) { alert('Please enter a subject name.'); return; }
+  const cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  cs.push({ id: Date.now(), name, shortName: document.getElementById('newSubjectShort').value.trim() || name, icon: document.getElementById('newSubjectIcon').value.trim() || '📚', color: document.getElementById('newSubjectColor').value, custom: true, topics: [] });
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
   closeAddSubjectModal();
   location.reload();
 }
-
-// Close modal if clicking outside of it
-document.getElementById('addSubjectModal').addEventListener('click', function(e) {
-  if (e.target === this) closeAddSubjectModal();
-});
-
+document.getElementById('addSubjectModal').addEventListener('click', function(e) { if (e.target === this) closeAddSubjectModal(); });
 document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
 document.getElementById('addSubjectBtn').addEventListener('click', openAddSubjectModal);
-
 init();
 </script>
 </body>
