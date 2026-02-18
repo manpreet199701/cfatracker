@@ -191,6 +191,12 @@ async function init() {
     return;
   }
 
+  // Merge with custom chapters/subtopics
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  if (customOverlay[subjectId] && customOverlay[subjectId].chapters) {
+    subject.customChapters = customOverlay[subjectId].chapters;
+  }
+
   document.title = `Study Time Table Tracker — ${subject.shortName}`;
   document.getElementById('breadSubject').textContent = subject.shortName;
 
@@ -237,26 +243,50 @@ function render(subject) {
 
   // Topics list
   const list = document.getElementById('topicsList');
-  list.innerHTML = subject.topics.map((t, i) => {
+  let html = '';
+  
+  // Render original topics
+  subject.topics.forEach((t, i) => {
     const isDone = !!completed[`s${subject.id}_t${t.id}`];
     const isChapter = t.isChapter || false;
     const rowClass = isChapter ? 'topic-row chapter' : (t.parentId ? 'topic-row subtopic' : 'topic-row');
     const completedClass = isDone && !isChapter ? 'completed' : '';
     
     if (isChapter) {
-      return `<div class="${rowClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+      html += `<div class="${rowClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s">
         <span class="topic-name">📖 ${t.name}</span>
       </div>`;
+    } else {
+      html += `<div class="${rowClass} ${completedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-sid="${subject.id}" data-tid="${t.id}">
+        <div class="topic-check ${isDone ? 'done' : ''}" data-check="${subject.id}_${t.id}">
+          ${isDone ? '✓' : ''}
+        </div>
+        <span class="topic-name">${t.name}</span>
+        <a href="topic.html?subject=${subject.id}&topic=${t.id}" class="topic-link-btn">📖 Open →</a>
+      </div>`;
     }
-    
-    return `<div class="${rowClass} ${completedClass} fade-up" style="animation-delay:${0.05 * i + 0.25}s" data-sid="${subject.id}" data-tid="${t.id}">
-      <div class="topic-check ${isDone ? 'done' : ''}" data-check="${subject.id}_${t.id}">
-        ${isDone ? '✓' : ''}
-      </div>
-      <span class="topic-name">${t.name}</span>
-      <a href="topic.html?subject=${subject.id}&topic=${t.id}" class="topic-link-btn">📖 Open →</a>
-    </div>`;
-  }).join('');
+  });
+  
+  // Render custom chapters and their subtopics
+  if (subject.customChapters) {
+    subject.customChapters.forEach((chapter, i) => {
+      html += `<div class="topic-row chapter fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+        <span class="topic-name">📖 ${chapter.name}</span>
+        <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn">📖 Open →</a>
+      </div>`;
+      
+      if (chapter.subtopics && chapter.subtopics.length > 0) {
+        chapter.subtopics.forEach(subtopic => {
+          html += `<div class="topic-row subtopic fade-up" style="animation-delay:${0.05 * i + 0.25}s">
+            <span class="topic-name">• ${subtopic.name}</span>
+            <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn">📖 Open →</a>
+          </div>`;
+        });
+      }
+    });
+  }
+  
+  list.innerHTML = html;
 
   // Click to toggle completion
   list.querySelectorAll('.topic-row:not(.chapter)').forEach(row => {
@@ -289,37 +319,62 @@ function saveNewChapter() {
     return;
   }
   
-  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const subject = customSubjects.find(s => s.id === subjectId);
+  let customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  let subject = customSubjects.find(s => s.id === subjectId);
   
-  if (subject) {
+  if (!subject) {
+    // Create a custom overlay for this subject
+    const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+    if (!customOverlay[subjectId]) {
+      customOverlay[subjectId] = { chapters: [] };
+    }
+    
+    const newChapterId = Date.now();
+    customOverlay[subjectId].chapters.push({
+      id: newChapterId,
+      name: name,
+      isChapter: true,
+      notes: '',
+      questions: [],
+      subtopics: []
+    });
+    
+    localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
+  } else {
     const newTopicId = Math.max(0, ...subject.topics.map(t => t.id)) + 1;
     subject.topics.push({
       id: newTopicId,
       name: name,
       isChapter: true,
       notes: '',
-      questions: []
+      questions: [],
+      subtopics: []
     });
     localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    closeAddChapterModal();
-    location.reload();
-  } else {
-    alert('Can only add chapters to custom subjects');
   }
+  
+  closeAddChapterModal();
+  location.reload();
 }
 
 function openAddTopicModal() {
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const subject = customSubjects.find(s => s.id === subjectId);
+  const customSubject = customSubjects.find(s => s.id === subjectId);
   
-  if (!subject) {
-    alert('Can only add sub-topics to custom subjects');
+  let chapters = [];
+  
+  if (customSubject) {
+    chapters = customSubject.topics.filter(t => t.isChapter);
+  } else if (customOverlay[subjectId]) {
+    chapters = customOverlay[subjectId].chapters || [];
+  }
+  
+  if (chapters.length === 0) {
+    alert('Please add a chapter first before adding sub-topics');
     return;
   }
   
-  // Populate chapter dropdown
-  const chapters = subject.topics.filter(t => t.isChapter);
   const select = document.getElementById('chapterSelect');
   select.innerHTML = '<option value="">Select a chapter...</option>' + 
     chapters.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -347,25 +402,39 @@ function saveNewTopic() {
     return;
   }
   
+  const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  const subject = customSubjects.find(s => s.id === subjectId);
+  const customSubject = customSubjects.find(s => s.id === subjectId);
   
-  if (subject) {
-    const newTopicId = Math.max(0, ...subject.topics.map(t => t.id)) + 1;
-    const parentIndex = subject.topics.findIndex(t => t.id === parentId);
-    
-    subject.topics.splice(parentIndex + 1, 0, {
-      id: newTopicId,
-      name: name,
-      parentId: parentId,
-      notes: '',
-      questions: []
-    });
-    
-    localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-    closeAddTopicModal();
-    location.reload();
+  if (customSubject) {
+    const chapter = customSubject.topics.find(t => t.id === parentId);
+    if (chapter) {
+      if (!chapter.subtopics) chapter.subtopics = [];
+      const newSubtopicId = Date.now();
+      chapter.subtopics.push({
+        id: newSubtopicId,
+        name: name,
+        parentId: parentId
+      });
+      localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+    }
+  } else {
+    if (!customOverlay[subjectId]) customOverlay[subjectId] = { chapters: [] };
+    const chapter = customOverlay[subjectId].chapters.find(c => c.id === parentId);
+    if (chapter) {
+      if (!chapter.subtopics) chapter.subtopics = [];
+      const newSubtopicId = Date.now();
+      chapter.subtopics.push({
+        id: newSubtopicId,
+        name: name,
+        parentId: parentId
+      });
+      localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
+    }
   }
+  
+  closeAddTopicModal();
+  location.reload();
 }
 
 document.getElementById('addChapterBtn').addEventListener('click', openAddChapterModal);
