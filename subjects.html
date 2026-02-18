@@ -3,97 +3,238 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Study Time Table Tracker — Subjects</title>
+<title>CFA Tracker – Subjects</title>
 <link rel="stylesheet" href="style.css"/>
 <style>
-.subjects-page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
-.subject-card-full { text-decoration: none; color: var(--text); display: flex; flex-direction: column; gap: 1rem; position: relative; overflow: hidden; transition: transform 0.2s; }
+.subjects-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.subject-card-full {
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+  text-decoration: none;
+}
 .subject-card-full:hover { transform: translateY(-3px); }
-.delete-subject-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.7rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
-.edit-mode .delete-subject-btn { display: block; }
-.subject-card-full .top-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 12px 12px 0 0; }
+
+.subject-card-full .top-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+}
+
 .subject-card-full .card-body { padding-top: 0.5rem; }
 .subject-card-full .big-icon { font-size: 2.5rem; margin-bottom: 0.25rem; }
 .subject-card-full .sub-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
 .subject-card-full .sub-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
 .subject-card-full .sub-pct { font-family: var(--mono); font-weight: 600; font-size: 1rem; }
 .subject-card-full .topic-count { font-size: 0.78rem; color: var(--text-muted); }
-.summary-strip { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 2rem; }
+
+.summary-strip {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
 .summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
 .summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
-.subjects-mini-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
-.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; position: relative; }
-.subj-mini:hover { background: var(--surface2); }
-.subj-mini-name { font-size: 0.78rem; font-weight: 600; }
-.subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
-.delete-mini-btn { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.2rem 0.5rem; font-size: 0.65rem; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; z-index: 10; }
-.edit-mode-mini .delete-mini-btn { display: block; }
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+
+/* Card wrapper for positioning actions button */
+.card-wrapper {
+  position: relative;
+}
+
+.card-actions-btn {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 10;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: all 0.15s;
+  opacity: 0;
+  pointer-events: none;
+}
+.card-wrapper:hover .card-actions-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.card-actions-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: #444C56;
+}
+
+.card-actions-dropdown {
+  display: none;
+  position: absolute;
+  top: 2.5rem;
+  right: 0.65rem;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  min-width: 155px;
+  overflow: hidden;
+}
+.card-actions-dropdown.open { display: block; }
+.card-actions-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.card-actions-dropdown button:hover { background: var(--surface2); }
+.card-actions-dropdown button.danger { color: #f85149; }
+.card-actions-dropdown button.danger:hover { background: rgba(248,81,73,0.1); }
+.card-actions-dropdown hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+/* Modals */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
 .modal.open { display: flex; }
-.modal-content { background: var(--surface); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
+.modal-content {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1.75rem;
+  max-width: 440px;
+  width: 92%;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.modal-header h3 { margin: 0; font-size: 1.05rem; }
+.modal-close {
+  background: none; border: none;
+  font-size: 1.4rem; cursor: pointer;
+  color: var(--text-dim); line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem; }
+.form-group input {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+.form-group input:focus { outline: none; border-color: var(--accent); }
+.modal-footer {
+  display: flex; gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+#confirmModal .modal-content { max-width: 360px; text-align: center; }
+#confirmModal p { color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.9rem; line-height: 1.5; }
+#confirmModal .modal-footer { justify-content: center; }
 </style>
 </head>
 <body>
+
 <nav>
-  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
+  <a href="index.html" class="nav-brand">CFA <span>Tracker</span></a>
   <div class="nav-links">
     <a href="index.html">Dashboard</a>
     <a href="subjects.html">Subjects</a>
-    <a href="sync.html">Sync</a>
-    <a href="#" id="authLink">Login</a>
   </div>
 </nav>
+
 <div class="page">
   <div class="fade-up">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
-      <div>
-        <p class="label">CFA Level I</p>
-        <h1 style="margin-top:0.25rem">All Subjects</h1>
-      </div>
-      <div style="display:flex;gap:0.5rem">
-        <button id="editModeBtn" class="btn btn-ghost">Edit</button>
-        <button id="addSubjectBtn" class="btn btn-primary">+ Add Custom Subject</button>
-      </div>
-    </div>
+    <p class="label">CFA Level I</p>
+    <h1 style="margin-top:0.25rem;margin-bottom:1.5rem">All Subjects</h1>
   </div>
+
   <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
-  <div class="card fade-up delay-2" style="margin-bottom:1.5rem">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <p class="label">Subject Progress Overview</p>
-      <button id="editModeMiniBtn" class="btn btn-ghost" style="padding:0.3rem 0.6rem;font-size:0.75rem">Edit</button>
-    </div>
-    <div id="subjectsMiniGrid" class="subjects-mini-grid"></div>
-  </div>
   <div id="subjectsGrid" class="subjects-page-grid"></div>
 </div>
 
-<div id="addSubjectModal" class="modal">
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 style="margin:0">Add Custom Subject</h3>
-      <button class="modal-close" onclick="closeAddSubjectModal()">&times;</button>
+      <h3>✏️ Edit Subject</h3>
+      <button class="modal-close" id="editModalClose">×</button>
     </div>
-    <div class="input-group">
+    <div class="form-group">
       <label>Subject Name</label>
-      <input id="newSubjectName" type="text" placeholder="e.g., Additional Practice"/>
+      <input type="text" id="editName" placeholder="e.g. Financial Statement Analysis"/>
     </div>
-    <div class="input-group">
+    <div class="form-group">
       <label>Short Name</label>
-      <input id="newSubjectShort" type="text" placeholder="e.g., Practice"/>
+      <input type="text" id="editShortName" placeholder="e.g. FSA"/>
     </div>
-    <div class="input-group">
+    <div class="form-group">
       <label>Icon (emoji)</label>
-      <input id="newSubjectIcon" type="text" placeholder="e.g., 📚" maxlength="2"/>
+      <input type="text" id="editIcon" placeholder="e.g. 📊" maxlength="4"/>
     </div>
-    <div class="input-group">
+    <div class="form-group">
       <label>Color</label>
-      <input id="newSubjectColor" type="color" value="#9C27B0"/>
+      <input type="color" id="editColor"/>
     </div>
-    <div style="display:flex;gap:0.75rem;margin-top:1rem">
-      <button class="btn btn-primary" onclick="saveNewSubject()">Create Subject</button>
-      <button class="btn btn-ghost" onclick="closeAddSubjectModal()">Cancel</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="editCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="editSaveBtn">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="confirmModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header" style="justify-content:center;margin-bottom:0.25rem">
+      <h3>🗑️ Delete Subject</h3>
+    </div>
+    <p id="confirmText">Are you sure? This cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -101,103 +242,186 @@
 <script src="app.js"></script>
 <script>
 setActiveNav();
+
+let ALL_DATA = null;
+let editingSubjectId = null;
+let deletingSubjectId = null;
+
 async function init() {
-  const data = await loadData();
+  ALL_DATA = await loadData();
+  render();
+}
+
+function isCustomSubject(id) {
+  const custom = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  return custom.some(s => s.id === id);
+}
+
+function render() {
   const completed = getCompleted();
-  const subjects = data.subjects;
-  const totalTopics = subjects.reduce((s, sub) => s + countSubtopics(sub), 0);
-  const doneTopics = subjects.reduce((s, sub) => s + countCompletedSubtopics(sub, completed), 0);
-  const overallPct = totalTopics ? Math.round(doneTopics / totalTopics * 100) : 0;
+  const subjects = ALL_DATA.subjects;
+
+  // Use countSubtopics from app.js — handles both built-in (topics[]) and custom (customChapters)
+  const totalTopics = subjects.reduce((sum, s) => sum + countSubtopics(s), 0);
+  const doneTopics  = subjects.reduce((sum, s) => sum + countCompletedSubtopics(s, completed), 0);
+  const overallPct  = totalTopics ? Math.round(doneTopics / totalTopics * 100) : 0;
+
   document.getElementById('summaryStrip').innerHTML = `
-    <div class="summary-stat"><div class="val" style="color:var(--accent)">${doneTopics}</div><div class="lbl">Topics Completed</div></div>
-    <div class="summary-stat"><div class="val" style="color:var(--text-muted)">${totalTopics - doneTopics}</div><div class="lbl">Topics Remaining</div></div>
-    <div class="summary-stat"><div class="val" style="color:var(--success)">${overallPct}%</div><div class="lbl">Overall Progress</div></div>
-    <div class="summary-stat"><div class="val">${subjects.length}</div><div class="lbl">Subjects</div></div>
+    <div class="summary-stat">
+      <div class="val" style="color:var(--accent)">${doneTopics}</div>
+      <div class="lbl">Topics Completed</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:var(--text-muted)">${totalTopics - doneTopics}</div>
+      <div class="lbl">Topics Remaining</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val" style="color:var(--success)">${overallPct}%</div>
+      <div class="lbl">Overall Progress</div>
+    </div>
+    <div class="summary-stat">
+      <div class="val">${subjects.length}</div>
+      <div class="lbl">Subjects</div>
+    </div>
   `;
-  document.getElementById('subjectsMiniGrid').innerHTML = subjects.map(s => {
-    const total = countSubtopics(s);
-    const done = countCompletedSubtopics(s, completed);
-    const pct = total ? Math.round(done / total * 100) : 0;
-    const deleteBtn = s.custom ? `<button class="delete-mini-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
-    return `<a href="subject.html?id=${s.id}" class="subj-mini">
-      ${deleteBtn}
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span class="subj-mini-name">${s.icon} ${s.shortName || s.name}</span>
-        <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${s.color}"></div></div>
-    </a>`;
-  }).join('');
-  document.getElementById('subjectsGrid').innerHTML = subjects.map((s, i) => {
-    const total = countSubtopics(s);
-    const done = countCompletedSubtopics(s, completed);
-    const pct = total ? Math.round(done / total * 100) : 0;
-    const delay = Math.min(i * 0.05, 0.5);
-    const deleteBtn = s.custom ? `<button class="delete-subject-btn" onclick="deleteSubject(${s.id}); event.preventDefault(); event.stopPropagation();">Delete</button>` : '';
-    return `<a href="subject.html?id=${s.id}" class="card subject-card-full fade-up" style="animation-delay:${delay+0.2}s">
-      <div class="top-bar" style="background:${s.color}"></div>
-      ${deleteBtn}
-      <div class="card-body">
-        <div class="big-icon">${s.icon}</div>
-        <div class="sub-name">${s.name}</div>
-        <div class="sub-meta">
-          <span class="topic-count">${done}/${total} topics</span>
-          <span class="sub-pct" style="color:${s.color}">${pct}%</span>
-        </div>
-        <div class="progress-track" style="margin-top:0.6rem">
-          <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
-        </div>
-      </div>
-    </a>`;
-  }).join('');
-}
-let editMode = false;
-function toggleEditMode() {
-  editMode = !editMode;
+
   const grid = document.getElementById('subjectsGrid');
-  const btn = document.getElementById('editModeBtn');
-  if (editMode) { grid.classList.add('edit-mode'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
-  else { grid.classList.remove('edit-mode'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+  grid.innerHTML = subjects.map((s, i) => {
+    const total = countSubtopics(s);
+    const done  = countCompletedSubtopics(s, completed);
+    const pct   = total ? Math.round(done / total * 100) : 0;
+    const delay = Math.min(i * 0.05, 0.5);
+    const custom = isCustomSubject(s.id);
+
+    const actionsHTML = custom ? `
+      <button class="card-actions-btn" data-id="${s.id}" title="Options">⋯</button>
+      <div class="card-actions-dropdown" id="dd-${s.id}">
+        <button data-action="edit" data-id="${s.id}">✏️ Edit</button>
+        <hr/>
+        <button class="danger" data-action="delete" data-id="${s.id}">🗑️ Delete</button>
+      </div>` : '';
+
+    return `<div class="card-wrapper fade-up" style="animation-delay:${delay + 0.2}s">
+      ${actionsHTML}
+      <a href="subject.html?id=${s.id}" class="card subject-card-full">
+        <div class="top-bar" style="background:${s.color}"></div>
+        <div class="card-body">
+          <div class="big-icon">${s.icon}</div>
+          <div class="sub-name">${s.name}</div>
+          <div class="sub-meta">
+            <span class="topic-count">${done}/${total} topics</span>
+            <span class="sub-pct" style="color:${s.color}">${pct}%</span>
+          </div>
+          <div class="progress-track" style="margin-top:0.6rem">
+            <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
+          </div>
+        </div>
+      </a>
+    </div>`;
+  }).join('');
+
+  // Wire up the ⋯ toggle buttons
+  grid.querySelectorAll('.card-actions-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dd = document.getElementById(`dd-${btn.dataset.id}`);
+      document.querySelectorAll('.card-actions-dropdown.open').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+      dd.classList.toggle('open');
+    });
+  });
+
+  // Wire up dropdown action buttons
+  grid.querySelectorAll('.card-actions-dropdown button[data-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      document.querySelectorAll('.card-actions-dropdown.open').forEach(d => d.classList.remove('open'));
+      const id = parseInt(btn.dataset.id);
+      if (btn.dataset.action === 'edit') openEdit(id);
+      if (btn.dataset.action === 'delete') openDelete(id);
+    });
+  });
 }
-let editModeMini = false;
-function toggleEditModeMini() {
-  editModeMini = !editModeMini;
-  const grid = document.getElementById('subjectsMiniGrid');
-  const btn = document.getElementById('editModeMiniBtn');
-  if (editModeMini) { grid.classList.add('edit-mode-mini'); btn.textContent = 'Done'; btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
-  else { grid.classList.remove('edit-mode-mini'); btn.textContent = 'Edit'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+
+// Close dropdowns when clicking elsewhere
+document.addEventListener('click', () => {
+  document.querySelectorAll('.card-actions-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+// ── Edit ──────────────────────────────────────────────
+function openEdit(id) {
+  const s = ALL_DATA.subjects.find(s => s.id === id);
+  if (!s) return;
+  editingSubjectId = id;
+  document.getElementById('editName').value      = s.name      || '';
+  document.getElementById('editShortName').value = s.shortName || '';
+  document.getElementById('editIcon').value      = s.icon      || '';
+  document.getElementById('editColor').value     = s.color     || '#58a6ff';
+  document.getElementById('editModal').classList.add('open');
 }
-function deleteSubject(subjectId) {
-  if (!confirm('Delete this subject?')) return;
-  let cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  cs = cs.filter(s => s.id !== subjectId);
-  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
-  const co = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
-  delete co[subjectId];
-  localStorage.setItem('cfa_subject_overlays', JSON.stringify(co));
-  location.reload();
+
+function closeEdit() {
+  editingSubjectId = null;
+  document.getElementById('editModal').classList.remove('open');
 }
-function openAddSubjectModal() {
-  document.getElementById('newSubjectName').value = '';
-  document.getElementById('newSubjectShort').value = '';
-  document.getElementById('newSubjectIcon').value = '';
-  document.getElementById('newSubjectColor').value = '#9C27B0';
-  document.getElementById('addSubjectModal').classList.add('open');
+document.getElementById('editModalClose').addEventListener('click', closeEdit);
+document.getElementById('editCancelBtn').addEventListener('click', closeEdit);
+
+document.getElementById('editSaveBtn').addEventListener('click', () => {
+  if (!editingSubjectId) return;
+  const name      = document.getElementById('editName').value.trim();
+  const shortName = document.getElementById('editShortName').value.trim();
+  const icon      = document.getElementById('editIcon').value.trim();
+  const color     = document.getElementById('editColor').value;
+  if (!name) { alert('Name is required.'); return; }
+
+  const custom = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const idx = custom.findIndex(s => s.id === editingSubjectId);
+  if (idx !== -1) {
+    custom[idx].name      = name;
+    custom[idx].shortName = shortName || name;
+    if (icon)  custom[idx].icon  = icon;
+    custom[idx].color = color;
+    localStorage.setItem('cfa_custom_subjects', JSON.stringify(custom));
+  }
+  closeEdit();
+  init();
+});
+
+// ── Delete ────────────────────────────────────────────
+function openDelete(id) {
+  const s = ALL_DATA.subjects.find(s => s.id === id);
+  if (!s) return;
+  deletingSubjectId = id;
+  document.getElementById('confirmText').textContent =
+    `Are you sure you want to delete "${s.name}"? All progress data for this subject will be lost. This cannot be undone.`;
+  document.getElementById('confirmModal').classList.add('open');
 }
-function closeAddSubjectModal() { document.getElementById('addSubjectModal').classList.remove('open'); }
-function saveNewSubject() {
-  const name = document.getElementById('newSubjectName').value.trim();
-  if (!name) { alert('Please enter a subject name.'); return; }
-  const cs = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
-  cs.push({ id: Date.now(), name, shortName: document.getElementById('newSubjectShort').value.trim() || name, icon: document.getElementById('newSubjectIcon').value.trim() || '📚', color: document.getElementById('newSubjectColor').value, custom: true, topics: [] });
-  localStorage.setItem('cfa_custom_subjects', JSON.stringify(cs));
-  closeAddSubjectModal();
-  location.reload();
-}
-document.getElementById('addSubjectModal').addEventListener('click', function(e) { if (e.target === this) closeAddSubjectModal(); });
-document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
-document.getElementById('editModeMiniBtn').addEventListener('click', toggleEditModeMini);
-document.getElementById('addSubjectBtn').addEventListener('click', openAddSubjectModal);
+
+document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+  deletingSubjectId = null;
+  document.getElementById('confirmModal').classList.remove('open');
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+  if (!deletingSubjectId) return;
+
+  // Remove from custom subjects list
+  let custom = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  custom = custom.filter(s => s.id !== deletingSubjectId);
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(custom));
+
+  // Remove subject overlay
+  const overlays = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+  delete overlays[deletingSubjectId];
+  localStorage.setItem('cfa_subject_overlays', JSON.stringify(overlays));
+
+  deletingSubjectId = null;
+  document.getElementById('confirmModal').classList.remove('open');
+  init();
+});
+
 init();
 </script>
 </body>
