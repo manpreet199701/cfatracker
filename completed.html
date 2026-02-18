@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Time Table Tracker — Completed Topics</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.completed-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.completed-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.completed-item .check { color: var(--success); font-size: 1.2rem; }
+.completed-item .topic-info { flex: 1; }
+.completed-item .topic-name { font-weight: 600; font-size: 0.95rem; }
+.completed-item .subject-name { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="subjects.html">Subjects</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="breadcrumb fade-up">
+    <a href="index.html">Home</a>
+    <span>›</span>
+    <span>Completed Topics</span>
+  </div>
+
+  <div class="fade-up delay-1" style="margin-bottom:2rem">
+    <h1>Completed Topics</h1>
+    <p class="stat-sub" id="completedCount">0 topics completed</p>
+  </div>
+
+  <div id="completedList" class="completed-list fade-up delay-2"></div>
+</div>
+
+<script src="app.js"></script>
+<script>
+setActiveNav();
+
+async function init() {
+  const data = await loadData();
+  const completed = getCompleted();
+  const completedTopics = [];
+
+  // Get all completed subtopics from custom chapters
+  data.subjects.forEach(subject => {
+    if (subject.customChapters) {
+      subject.customChapters.forEach(chapter => {
+        if (chapter.subtopics) {
+          chapter.subtopics.forEach(subtopic => {
+            const key = `c${chapter.id}_st${subtopic.id}`;
+            if (completed[key]) {
+              completedTopics.push({
+                name: subtopic.name,
+                subjectName: subject.name,
+                subjectColor: subject.color,
+                link: `topic.html?subject=${subject.id}&chapter=${chapter.id}`
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  document.getElementById('completedCount').textContent = `${completedTopics.length} topic${completedTopics.length !== 1 ? 's' : ''} completed`;
+
+  const list = document.getElementById('completedList');
+  if (completedTopics.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-dim);padding:2rem;text-align:center">No topics completed yet. Start studying!</p>';
+  } else {
+    list.innerHTML = completedTopics.map(t => `
+      <a href="${t.link}" class="completed-item">
+        <span class="check">✓</span>
+        <div class="topic-info">
+          <div class="topic-name">${t.name}</div>
+          <div class="subject-name" style="color:${t.subjectColor}">${t.subjectName}</div>
+        </div>
+      </a>
+    `).join('');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
