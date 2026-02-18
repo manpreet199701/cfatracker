@@ -141,6 +141,23 @@ nav {
   word-break: break-word;
 }
 
+.user-save-btn,
+.user-save-logout-btn {
+  margin-top: 0.6rem;
+  width: 100%;
+  border: 1px solid rgba(88,166,255,0.35);
+  background: rgba(88,166,255,0.12);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 0.45rem 0.65rem;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.user-save-btn:hover,
+.user-save-logout-btn:hover { background: rgba(88,166,255,0.2); }
+
 .user-logout-btn {
   margin-top: 0.75rem;
   width: 100%;
