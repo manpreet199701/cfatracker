@@ -64,15 +64,29 @@ const log = getStudyLog();
 const entry = log.find(l => l.date === dateStr);
 
 if (!entry) {
+  const date = new Date(dateStr + 'T00:00:00');
+  const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('breadDate').textContent = formattedDate;
   document.querySelector('.page').innerHTML = `
     <div class="breadcrumb fade-up">
       <a href="index.html">Home</a>
       <span>›</span>
-      <span>Study Session</span>
+      <span>${formattedDate}</span>
     </div>
     <div class="card fade-up delay-1">
-      <h2>No study session found for this date</h2>
-      <a href="index.html" class="btn btn-primary" style="margin-top:1rem">← Back to Dashboard</a>
+      <h2 style="margin-bottom:0.5rem">${formattedDate}</h2>
+      <p class="stat-sub">No session logged for this date yet.</p>
+      <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem;max-width:300px">
+        <div>
+          <p class="label" style="margin-bottom:0.4rem">Hours Studied</p>
+          <input id="pastHoursInput" type="number" min="0" max="24" step="0.5" placeholder="e.g. 2.5"
+            style="width:100%;padding:0.6rem 0.85rem;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:1rem"/>
+        </div>
+        <div style="display:flex;gap:0.75rem">
+          <button class="btn btn-primary" onclick="logPastSession()">Log Hours</button>
+          <a href="index.html" class="btn btn-ghost">← Back</a>
+        </div>
+      </div>
     </div>
   `;
 } else {
@@ -120,6 +134,16 @@ function deleteSession() {
   const newLog = log.filter(l => l.date !== dateStr);
   saveStudyLog(newLog);
   window.location.href = 'index.html';
+}
+function logPastSession() {
+  const input = document.getElementById('pastHoursInput');
+  const hours = parseFloat(input.value);
+  if (isNaN(hours) || hours < 0) {
+    alert('Please enter a valid number of hours.');
+    return;
+  }
+  logHoursForDate(dateStr, hours);
+  window.location.reload();
 }
 </script>
 </body>
