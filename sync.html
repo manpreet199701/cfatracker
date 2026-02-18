@@ -49,6 +49,7 @@
 </div>
 
 <script src="app.js"></script>
+<script type="module" src="firebase-sync.js"></script>
 <script>
 setActiveNav();
 
@@ -98,6 +99,7 @@ function importData(event) {
       localStorage.setItem('cfa_completed', JSON.stringify(data.completed));
       localStorage.setItem('cfa_custom_subjects', JSON.stringify(data.customSubjects || []));
       localStorage.setItem('cfa_subject_overlays', JSON.stringify(data.subjectOverlays || {}));
+      if (window.queueCloudSync) window.queueCloudSync('import');
 
       alert('Data imported successfully!');
       window.location.href = 'index.html';
@@ -117,6 +119,7 @@ function clearAllData() {
   localStorage.removeItem('cfa_completed');
   localStorage.removeItem('cfa_custom_subjects');
   localStorage.removeItem('cfa_subject_overlays');
+  if (window.queueCloudSync) window.queueCloudSync('clear-all');
 
   alert('All data cleared');
   window.location.href = 'index.html';
