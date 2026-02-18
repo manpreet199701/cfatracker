@@ -37,7 +37,7 @@ function saveCompleted(c) {
 function toggleCompleted(subjectId, topicId) {
   const c = getCompleted();
   const key = `s${subjectId}_t${topicId}`;
-  c[key] = !c[key];
+  c[key] = c[key] ? false : today();
   saveCompleted(c);
   return c[key];
 }
@@ -66,17 +66,14 @@ function getHoursForDate(date) {
 }
 
 // ── ROLLOVER CALCULATION ──
-// Returns the effective target for today including accumulated deficit/surplus
 function getTodayTarget() {
   const goal = getDailyGoal();
   const log = getStudyLog();
   const todayStr = today();
   let deficit = 0;
-  // sum up all past days' deficit/surplus (not including today)
   log.filter(l => l.date < todayStr).forEach(l => {
     deficit += (goal - l.hours);
   });
-  // effective target = goal + deficit (deficit can be negative = surplus)
   return Math.max(0, goal + deficit);
 }
 
@@ -99,11 +96,11 @@ async function loadData() {
     const res = await fetch('data.json');
     if (!res.ok) throw new Error('Failed to load data.json');
     const data = await res.json();
-    
+
     // Merge with custom subjects from localStorage
     const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
     data.subjects = [...data.subjects, ...customSubjects];
-    
+
     // Merge custom chapters/subtopics into subjects
     const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
     data.subjects.forEach(subject => {
@@ -111,7 +108,7 @@ async function loadData() {
         subject.customChapters = customOverlay[subject.id].chapters;
       }
     });
-    
+
     return data;
   } catch (e) {
     console.error('Could not load data.json:', e);
@@ -121,27 +118,42 @@ async function loadData() {
 }
 
 // ── COUNT SUBTOPICS ──
+// Handles both built-in subjects (flat `topics` array) and
+// custom subjects (nested `customChapters` with `subtopics`)
 function countSubtopics(subject) {
   let count = 0;
+  // Built-in subjects use a flat `topics` array
+  if (subject.topics) {
+    count += subject.topics.length;
+  }
+  // Custom subjects use `customChapters` with nested subtopics
   if (subject.customChapters) {
     subject.customChapters.forEach(chapter => {
-      if (chapter.subtopics) {
-        count += chapter.subtopics.length;
-      }
+      if (chapter.subtopics) count += chapter.subtopics.length;
     });
   }
   return count;
 }
 
 // ── COUNT COMPLETED SUBTOPICS ──
+// Handles both built-in subjects (key: s${subjectId}_t${topicId}) and
+// custom subjects (key: c${chapterId}_st${subtopicId})
 function countCompletedSubtopics(subject, completed) {
   let count = 0;
+  // Built-in subjects: key format is s${subjectId}_t${topicId}
+  if (subject.topics) {
+    subject.topics.forEach(topic => {
+      const key = `s${subject.id}_t${topic.id}`;
+      if (completed[key] && completed[key] !== false) count++;
+    });
+  }
+  // Custom subjects: key format is c${chapterId}_st${subtopicId}
   if (subject.customChapters) {
     subject.customChapters.forEach(chapter => {
       if (chapter.subtopics) {
         chapter.subtopics.forEach(subtopic => {
           const key = `c${chapter.id}_st${subtopic.id}`;
-          if (completed[key]) count++;
+          if (completed[key] && completed[key] !== false) count++;
         });
       }
     });
