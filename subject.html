@@ -290,9 +290,9 @@ function render(subject) {
           ${allSubtopicsComplete ? '✓' : ''}
         </div>
         <span class="topic-name">📖 ${chapter.name}</span>
-        <button class="edit-btn" onclick="editChapter(${chapter.id}, '${chapter.name.replace(/'/g, "\\'")}''); event.stopPropagation();">Edit</button>
+        <button class="edit-btn" onclick="event.stopPropagation(); editChapter(${chapter.id}, '${chapter.name.replace(/'/g, "\\'")}'');">Edit</button>
         <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn" onclick="event.stopPropagation()">📖 Open →</a>
-        <button class="delete-btn" onclick="deleteChapter(${chapter.id}); event.stopPropagation();">Delete</button>
+        <button class="delete-btn" onclick="event.stopPropagation(); deleteChapter(${chapter.id});">Delete</button>
       </div>`;
       
       if (chapter.subtopics && chapter.subtopics.length > 0) {
@@ -306,9 +306,9 @@ function render(subject) {
               ${isSubtopicDone ? '✓' : ''}
             </div>
             <span class="topic-name">• ${subtopic.name}</span>
-            <button class="edit-btn" onclick="editSubtopic(${chapter.id}, ${subtopic.id}, '${subtopic.name.replace(/'/g, "\\'")}''); event.stopPropagation();">Edit</button>
+            <button class="edit-btn" onclick="event.stopPropagation(); editSubtopic(${chapter.id}, ${subtopic.id}, '${subtopic.name.replace(/'/g, "\\'")}'');">Edit</button>
             <a href="topic.html?subject=${subject.id}&chapter=${chapter.id}" class="topic-link-btn" onclick="event.stopPropagation()">📖 Open →</a>
-            <button class="delete-btn" onclick="deleteSubtopic(${chapter.id}, ${subtopic.id}); event.stopPropagation();">Delete</button>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteSubtopic(${chapter.id}, ${subtopic.id});">Delete</button>
           </div>`;
         });
       }
@@ -353,8 +353,48 @@ function toggleChapter(chapterId) {
 function toggleSubtopic(chapterId, subtopicId) {
   const completed = getCompleted();
   const key = `c${chapterId}_st${subtopicId}`;
+  const wasCompleted = completed[key];
   completed[key] = !completed[key];
   saveCompleted(completed);
+  
+  // Track topic completion in today's study log
+  if (!wasCompleted && completed[key]) {
+    const todayStr = today();
+    const log = getStudyLog();
+    let entry = log.find(l => l.date === todayStr);
+    
+    if (!entry) {
+      entry = { date: todayStr, hours: 0, topics: [] };
+      log.push(entry);
+    }
+    
+    if (!entry.topics) entry.topics = [];
+    
+    // Get subtopic name
+    const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
+    const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+    const customSubject = customSubjects.find(s => s.id === subjectId);
+    
+    let subtopicName = '';
+    if (customSubject) {
+      const chapter = customSubject.topics.find(t => t.id === chapterId);
+      if (chapter && chapter.subtopics) {
+        const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
+        if (subtopic) subtopicName = subtopic.name;
+      }
+    } else if (customOverlay[subjectId]) {
+      const chapter = customOverlay[subjectId].chapters.find(c => c.id === chapterId);
+      if (chapter && chapter.subtopics) {
+        const subtopic = chapter.subtopics.find(st => st.id === subtopicId);
+        if (subtopic) subtopicName = subtopic.name;
+      }
+    }
+    
+    if (subtopicName && !entry.topics.includes(subtopicName)) {
+      entry.topics.push(subtopicName);
+      saveStudyLog(log);
+    }
+  }
   
   // Update UI without full reload
   const checkbox = event.target;
