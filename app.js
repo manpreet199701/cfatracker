@@ -3,6 +3,7 @@ const KEYS = {
   dailyGoal: 'cfa_daily_goal',
   completed: 'cfa_completed',
 };
+const AUTO_FILL_DAYS = 365;
 
 // Queue a cloud sync if the helper is available (set by firebase-sync.js)
 function queueSync(reason = 'change') {
@@ -46,9 +47,59 @@ function isCompleted(subjectId, topicId) {
 function logHoursForDate(date, hours) {
   const log = getStudyLog();
   const existing = log.find(l => l.date === date);
-  if (existing) { existing.hours = hours; } else { log.push({ date, hours }); }
+  if (existing) {
+    existing.hours = hours;
+    existing.auto = false;
+    if (!Array.isArray(existing.topics)) existing.topics = [];
+  } else {
+    log.push({ date, hours, topics: [], auto: false });
+  }
   log.sort((a, b) => a.date.localeCompare(b.date));
   saveStudyLog(log);
+}
+
+// Backfill missing days (as 0h) so rollover + calendar show gaps consistently.
+// Only fills up to the past year, and only if there is at least one entry already.
+function ensureDailyEntries(days = AUTO_FILL_DAYS) {
+  const log = getStudyLog();
+  if (!log.length || !days || days <= 0) return log;
+
+  let earliest = null;
+  log.forEach(l => {
+    if (l && l.date && (!earliest || l.date < earliest)) earliest = l.date;
+  });
+  if (!earliest) return log;
+
+  const startLimit = new Date();
+  startLimit.setDate(startLimit.getDate() - days);
+  startLimit.setHours(0, 0, 0, 0);
+
+  const earliestDate = new Date(earliest + 'T00:00:00');
+  const startDate = earliestDate > startLimit ? earliestDate : startLimit;
+
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() - 1);
+  endDate.setHours(0, 0, 0, 0);
+
+  if (endDate < startDate) return log;
+
+  const byDate = new Map(log.map(l => [l.date, l]));
+  let changed = false;
+
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    if (!byDate.has(dateStr)) {
+      log.push({ date: dateStr, hours: 0, topics: [], auto: true });
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    log.sort((a, b) => a.date.localeCompare(b.date));
+    saveStudyLog(log);
+  }
+
+  return log;
 }
 function getHoursForDate(date) {
   const log = getStudyLog();
