@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CFA Tracker — Subjects</title>
+<title>Study Time Table Tracker — Subjects</title>
 <link rel="stylesheet" href="style.css"/>
 <style>
 .subjects-page-grid {
@@ -50,12 +50,19 @@
 }
 .summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
 .summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal.open { display: flex; }
+.modal-content { background: var(--surface); border-radius: 12px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
+.modal-close:hover { color: var(--text); }
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="index.html" class="nav-brand">CFA <span>Tracker</span></a>
+  <a href="index.html" class="nav-brand">Study Time Table <span>Tracker</span></a>
   <div class="nav-links">
     <a href="index.html">Dashboard</a>
     <a href="subjects.html">Subjects</a>
@@ -64,13 +71,48 @@
 
 <div class="page">
   <div class="fade-up">
-    <p class="label">CFA Level I</p>
-    <h1 style="margin-top:0.25rem;margin-bottom:1.5rem">All Subjects</h1>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <p class="label">CFA Level I</p>
+        <h1 style="margin-top:0.25rem">All Subjects</h1>
+      </div>
+      <button id="addSubjectBtn" class="btn btn-primary">+ Add Custom Subject</button>
+    </div>
   </div>
 
   <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
 
   <div id="subjectsGrid" class="subjects-page-grid"></div>
+</div>
+
+<!-- ADD SUBJECT MODAL -->
+<div id="addSubjectModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin:0">Add Custom Subject</h3>
+      <button class="modal-close" onclick="closeAddSubjectModal()">&times;</button>
+    </div>
+    <div class="input-group">
+      <label>Subject Name</label>
+      <input id="newSubjectName" type="text" placeholder="e.g., Additional Practice"/>
+    </div>
+    <div class="input-group">
+      <label>Short Name</label>
+      <input id="newSubjectShort" type="text" placeholder="e.g., Practice"/>
+    </div>
+    <div class="input-group">
+      <label>Icon (emoji)</label>
+      <input id="newSubjectIcon" type="text" placeholder="e.g., 📚" maxlength="2"/>
+    </div>
+    <div class="input-group">
+      <label>Color</label>
+      <input id="newSubjectColor" type="color" value="#9C27B0"/>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button class="btn btn-primary" onclick="saveNewSubject()">Create Subject</button>
+      <button class="btn btn-ghost" onclick="closeAddSubjectModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script src="app.js"></script>
@@ -128,6 +170,48 @@ async function init() {
     </a>`;
   }).join('');
 }
+
+function openAddSubjectModal() {
+  document.getElementById('addSubjectModal').classList.add('open');
+}
+
+function closeAddSubjectModal() {
+  document.getElementById('addSubjectModal').classList.remove('open');
+  document.getElementById('newSubjectName').value = '';
+  document.getElementById('newSubjectShort').value = '';
+  document.getElementById('newSubjectIcon').value = '';
+}
+
+function saveNewSubject() {
+  const name = document.getElementById('newSubjectName').value.trim();
+  const shortName = document.getElementById('newSubjectShort').value.trim();
+  const icon = document.getElementById('newSubjectIcon').value.trim();
+  const color = document.getElementById('newSubjectColor').value;
+  
+  if (!name || !shortName) {
+    alert('Please enter subject name and short name');
+    return;
+  }
+  
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+  const newId = 1000 + customSubjects.length;
+  
+  customSubjects.push({
+    id: newId,
+    name: name,
+    shortName: shortName,
+    color: color,
+    icon: icon || '📚',
+    topics: [],
+    custom: true
+  });
+  
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+  closeAddSubjectModal();
+  location.reload();
+}
+
+document.getElementById('addSubjectBtn').addEventListener('click', openAddSubjectModal);
 
 init();
 </script>
