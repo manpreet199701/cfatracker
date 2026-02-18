@@ -8,13 +8,12 @@
 4. Disable Google Analytics (optional)
 5. Click "Create project"
 
-## Step 2: Enable Google Authentication
+## Step 2: Enable Phone Authentication
 
 1. In Firebase Console, go to "Authentication" → "Sign-in method"
-2. Click "Google" provider
+2. Click "Phone" provider
 3. Toggle "Enable"
-4. Enter support email
-5. Click "Save"
+4. Click "Save"
 
 ## Step 3: Enable Firestore Database
 
