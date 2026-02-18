@@ -56,9 +56,7 @@
 .subject-card-full .sub-pct { font-family: var(--mono); font-weight: 600; font-size: 1rem; }
 .subject-card-full .topic-count { font-size: 0.78rem; color: var(--text-muted); }
 
-.overall-bar {
-  max-width: 600px;
-}
+.overall-bar { max-width: 600px; }
 
 .summary-strip {
   display: flex;
@@ -68,6 +66,13 @@
 }
 .summary-stat .val { font-family: var(--mono); font-size: 1.8rem; font-weight: 600; }
 .summary-stat .lbl { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+/* Mini subject progress (same as dashboard) */
+.subjects-mini-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin-bottom: 2rem; }
+.subj-mini { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); transition: all 0.15s; }
+.subj-mini:hover { background: var(--surface2); }
+.subj-mini-name { font-size: 0.78rem; font-weight: 600; }
+.subj-mini-pct { font-family: var(--mono); font-size: 0.75rem; }
 
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
 .modal.open { display: flex; }
@@ -85,7 +90,7 @@
     <a href="index.html">Dashboard</a>
     <a href="subjects.html">Subjects</a>
     <a href="sync.html">Sync</a>
-    <a href="login.html">Login</a>
+    <a href="#" id="authLink">Login</a>
   </div>
 </nav>
 
@@ -103,8 +108,18 @@
     </div>
   </div>
 
+  <!-- SUMMARY STRIP -->
   <div id="summaryStrip" class="summary-strip fade-up delay-1"></div>
 
+  <!-- SUBJECT PROGRESS (same mini cards as dashboard) -->
+  <div class="card fade-up delay-2" style="margin-bottom:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <p class="label" style="margin:0">Subject Progress Overview</p>
+    </div>
+    <div id="subjectsMiniGrid" class="subjects-mini-grid"></div>
+  </div>
+
+  <!-- FULL SUBJECT CARDS GRID -->
   <div id="subjectsGrid" class="subjects-page-grid"></div>
 </div>
 
@@ -171,7 +186,23 @@ async function init() {
     </div>
   `;
 
-  // Subject cards
+  // Mini subject progress grid (same as dashboard)
+  document.getElementById('subjectsMiniGrid').innerHTML = subjects.map(s => {
+    const total = countSubtopics(s);
+    const done = countCompletedSubtopics(s, completed);
+    const pct = total ? Math.round(done / total * 100) : 0;
+    return `<a href="subject.html?id=${s.id}" class="subj-mini">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="subj-mini-name">${s.icon} ${s.shortName || s.name}</span>
+        <span class="subj-mini-pct" style="color:${s.color}">${pct}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${pct}%;background:${s.color}"></div>
+      </div>
+    </a>`;
+  }).join('');
+
+  // Full subject cards
   const grid = document.getElementById('subjectsGrid');
   grid.innerHTML = subjects.map((s, i) => {
     const total = countSubtopics(s);
@@ -197,13 +228,13 @@ async function init() {
   }).join('');
 }
 
+// ── EDIT MODE ──
 let editMode = false;
 
 function toggleEditMode() {
   editMode = !editMode;
   const grid = document.getElementById('subjectsGrid');
   const btn = document.getElementById('editModeBtn');
-  
   if (editMode) {
     grid.classList.add('edit-mode');
     btn.textContent = 'Done';
@@ -217,19 +248,69 @@ function toggleEditMode() {
   }
 }
 
+// ── DELETE SUBJECT ──
 function deleteSubject(subjectId) {
   if (!confirm('Delete this subject and all its chapters/topics?')) return;
-  
   let customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
   customSubjects = customSubjects.filter(s => s.id !== subjectId);
   localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
-  
   const customOverlay = JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}');
   delete customOverlay[subjectId];
   localStorage.setItem('cfa_subject_overlays', JSON.stringify(customOverlay));
-  
   location.reload();
 }
+
+// ── ADD SUBJECT MODAL ──
+function openAddSubjectModal() {
+  document.getElementById('addSubjectModal').classList.add('open');
+  // Clear fields
+  document.getElementById('newSubjectName').value = '';
+  document.getElementById('newSubjectShort').value = '';
+  document.getElementById('newSubjectIcon').value = '';
+  document.getElementById('newSubjectColor').value = '#9C27B0';
+}
+
+function closeAddSubjectModal() {
+  document.getElementById('addSubjectModal').classList.remove('open');
+}
+
+function saveNewSubject() {
+  const name = document.getElementById('newSubjectName').value.trim();
+  const shortName = document.getElementById('newSubjectShort').value.trim();
+  const icon = document.getElementById('newSubjectIcon').value.trim();
+  const color = document.getElementById('newSubjectColor').value;
+
+  if (!name) {
+    alert('Please enter a subject name.');
+    return;
+  }
+
+  const customSubjects = JSON.parse(localStorage.getItem('cfa_custom_subjects') || '[]');
+
+  // Generate a unique ID (use timestamp to avoid collisions)
+  const newId = Date.now();
+
+  const newSubject = {
+    id: newId,
+    name: name,
+    shortName: shortName || name,
+    icon: icon || '📚',
+    color: color,
+    custom: true,
+    topics: []
+  };
+
+  customSubjects.push(newSubject);
+  localStorage.setItem('cfa_custom_subjects', JSON.stringify(customSubjects));
+
+  closeAddSubjectModal();
+  location.reload();
+}
+
+// Close modal if clicking outside of it
+document.getElementById('addSubjectModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddSubjectModal();
+});
 
 document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
 document.getElementById('addSubjectBtn').addEventListener('click', openAddSubjectModal);
