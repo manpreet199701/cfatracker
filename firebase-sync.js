@@ -28,6 +28,9 @@ let suppressSync = false;
 const rawSetItem = localStorage.setItem.bind(localStorage);
 const rawRemoveItem = localStorage.removeItem.bind(localStorage);
 
+const LOCAL_OWNER_KEY = 'cfa_data_owner';
+const LOCAL_UPDATED_KEY = 'cfa_last_updated';
+
 const TRACKED_KEYS = new Set([
   'cfa_study_log',
   'cfa_daily_goal',
@@ -40,11 +43,11 @@ let resolveAuthReady;
 const authReady = new Promise((res) => { resolveAuthReady = res; });
 
 const stampLocalUpdated = (at = new Date().toISOString()) => {
-  rawSetItem('cfa_last_updated', at);
+  rawSetItem(LOCAL_UPDATED_KEY, at);
   return at;
 };
 
-const getLocalUpdatedAt = () => localStorage.getItem('cfa_last_updated');
+const getLocalUpdatedAt = () => localStorage.getItem(LOCAL_UPDATED_KEY);
 
 const getLocalPayload = () => ({
   studyLog: JSON.parse(localStorage.getItem('cfa_study_log') || '[]'),
@@ -54,6 +57,18 @@ const getLocalPayload = () => ({
   subjectOverlays: JSON.parse(localStorage.getItem('cfa_subject_overlays') || '{}'),
   updatedAt: getLocalUpdatedAt() || stampLocalUpdated()
 });
+
+function clearLocalStudyData() {
+  suppressSync = true;
+  rawRemoveItem('cfa_study_log');
+  rawRemoveItem('cfa_daily_goal');
+  rawRemoveItem('cfa_completed');
+  rawRemoveItem('cfa_custom_subjects');
+  rawRemoveItem('cfa_subject_overlays');
+  rawRemoveItem(LOCAL_UPDATED_KEY);
+  rawRemoveItem(LOCAL_OWNER_KEY);
+  suppressSync = false;
+}
 
 const hasMeaningfulLocalData = () => {
   const studyLog = JSON.parse(localStorage.getItem('cfa_study_log') || '[]');
@@ -105,7 +120,7 @@ const applyLocalData = (data) => {
 
   const updatedAt = data.updatedAt || (changed ? new Date().toISOString() : getLocalUpdatedAt());
   if (updatedAt && getLocalUpdatedAt() !== updatedAt) {
-    rawSetItem('cfa_last_updated', updatedAt);
+    rawSetItem(LOCAL_UPDATED_KEY, updatedAt);
     changed = true;
   }
 
@@ -215,25 +230,27 @@ localStorage.removeItem = (key) => {
 
 onAuthStateChanged(auth, (user) => {
   const previousUserId = localStorage.getItem('user_id');
+  const previousOwnerId = localStorage.getItem(LOCAL_OWNER_KEY);
   currentUser = user;
   if (user) {
-    if (previousUserId && previousUserId !== user.uid) {
-      suppressSync = true;
-      rawRemoveItem('cfa_study_log');
-      rawRemoveItem('cfa_daily_goal');
-      rawRemoveItem('cfa_completed');
-      rawRemoveItem('cfa_custom_subjects');
-      rawRemoveItem('cfa_subject_overlays');
-      rawRemoveItem('cfa_last_updated');
-      suppressSync = false;
+    const switchingUsers = (
+      (previousOwnerId && previousOwnerId !== user.uid)
+      || (previousUserId && previousUserId !== user.uid)
+    );
+    if (switchingUsers) {
+      clearLocalStudyData();
     }
     rawSetItem('user_id', user.uid);
     rawSetItem('user_email', user.email || '');
+    rawSetItem(LOCAL_OWNER_KEY, user.uid);
     if (!localStorage.getItem('user_name')) {
       const fallbackName = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
       rawSetItem('user_name', fallbackName);
     }
-  } else if (previousUserId) {
+  } else if (previousOwnerId || previousUserId) {
+    // Signed out: clear user-scoped study data so the next account on this browser
+    // doesn't inherit it.
+    clearLocalStudyData();
     rawRemoveItem('user_id');
     rawRemoveItem('user_email');
     rawRemoveItem('user_name');
